@@ -73,3 +73,45 @@ exports.getItinerary = async (req, res) => {
   const itinerary = await prisma.itinerary.findUnique({ where: { trip_id: tripId } });
   res.json({ success: true, data: itinerary ? itinerary.plan : null });
 };
+
+exports.localGuide = async (req, res) => {
+  const result = localGuideSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ success: false, error: result.error.format() });
+  }
+  const { tripId, query, location } = result.data;
+
+  const context = await getFullContext(tripId, req.user.userId);
+  const destData = await prisma.destination.findUnique({ where: { name: context.trip.destination } });
+  context.destData = destData;
+
+  const prompt = gemini.buildPrompt(
+    'Provide on-ground guidance: nearby essentials, scam warnings, cultural norms, transport.',
+    context,
+    query + ` Location: ${JSON.stringify(location)}`
+  );
+  const responseText = await gemini.generateContent(prompt);
+
+  res.json({ success: true, data: { response: responseText } });
+};
+
+
+exports.vrExplain = async (req, res) => {
+  const result = vrExplainSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ success: false, error: result.error.format() });
+  }
+  const { destination, location, time, userPreferences } = result.data;
+
+  const destData = await prisma.destination.findUnique({ where: { name: destination } });
+  const context = { destData, userPreferences, time, location };
+
+  const prompt = gemini.buildPrompt(
+    'Explain what the user is seeing in VR: contextual info, best visit tips, crowd info.',
+    context,
+    `Explain ${location} at ${time}.`
+  );
+  const responseText = await gemini.generateContent(prompt);
+
+  res.json({ success: true, data: { response: responseText } });
+};
