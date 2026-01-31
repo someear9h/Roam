@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  Int      @id @default(autoincrement())
+  name                String?
+  email               String   @unique
+  phone               String?
+  language            String   @default("en")
+  accessibility_needs String?
+  password            String
+  created_at          DateTime @default(now())
+  trips               Trip[]
+}
+
+model Trip {
+  id           Int          @id @default(autoincrement())
+  user_id      Int
+  destination  String
+  start_date   DateTime?
+  end_date     DateTime?
+  booking_id   String?
+  status       String       @default("active")
+  created_at   DateTime     @default(now())
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  itinerary    Itinerary?
+  chat_log     ChatLog?
+}
+
+model Itinerary {
+  id            Int      @id @default(autoincrement())
+  trip_id       Int      @unique
+  plan          Json
+  generated_at  DateTime @default(now())
+  trip          Trip     @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+}
+
+model ChatLog {
+  id         Int      @id @default(autoincrement())
+  trip_id    Int      @unique
+  messages   Json     @default("[]")
+  updated_at DateTime @default(now())
+  trip       Trip     @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+}
+
+model Destination {
+  id                  Int      @id @default(autoincrement())
+  name                String   @unique
+  vr_assets           Json     @default("[]")
+  local_tips          Json     @default("[]")
+  emergency_contacts  Json     @default("{}")
+  highlights          Json     @default("[]")
+  updated_at          DateTime @default(now())
+}
