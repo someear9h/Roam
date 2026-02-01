@@ -1,195 +1,388 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  MapPin, RefreshCw, Footprints, Accessibility, Palette, 
-  ExternalLink, Ticket, Car, ChevronRight, Coffee, Utensils
+  MapPin, RefreshCw, ChevronRight, ChevronDown, Clock, Sparkles,
+  Calendar, Sun, Moon, Sunrise, Coffee, Utensils, Camera, 
+  ShoppingBag, Landmark, TreePine, Car, MapPinned, Star, 
+  CheckCircle, Plus, Edit3, Loader2, ArrowRight
 } from 'lucide-react';
+import { aiAPI, tripAPI, preferencesAPI } from '../services/api';
+
+const ACTIVITY_ICONS = {
+  sightseeing: Landmark,
+  food: Utensils,
+  transport: Car,
+  rest: Coffee,
+  shopping: ShoppingBag,
+  nature: TreePine,
+  photography: Camera,
+  morning: Sunrise,
+  default: MapPin
+};
+
+const TIME_ICONS = {
+  morning: { icon: Sunrise, color: 'text-orange-500', bg: 'bg-orange-50' },
+  afternoon: { icon: Sun, color: 'text-yellow-500', bg: 'bg-yellow-50' },
+  evening: { icon: Moon, color: 'text-indigo-500', bg: 'bg-indigo-50' }
+};
 
 export default function Itinerary() {
   const [activeDay, setActiveDay] = useState(1);
+  const [itinerary, setItinerary] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [expandedDays, setExpandedDays] = useState({ 1: true });
+  const [currentTrip, setCurrentTrip] = useState(null);
+  const [preferences, setPreferences] = useState(null);
 
-  // --- DATA ---
-  const itineraryData = [
-    {
-      id: 1,
-      time: "09:00 AM",
-      type: "activity",
-      category: "Breakfast",
-      title: "Breakfast at Blue Bottle Coffee",
-      desc: "Start your day with a perfectly brewed coffee and artisanal pastries in a modern, airy setting.",
-      // FIXED IMAGE
-      image: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&q=80&w=800",
-      link: "View Menu",
-      icon: Coffee
-    },
-    {
-      type: "buffer",
-      mode: "walk",
-      duration: "15 min walk",
-      detail: "Scenic route via Park Ave"
-    },
-    {
-      id: 2,
-      time: "10:30 AM",
-      type: "activity",
-      category: "Museum",
-      title: "Museum of Modern Art Tour",
-      desc: "A guided journey through the evolution of contemporary art. Your accessibility preferences have been noted for the elevator route.",
-      // FIXED IMAGE
-      image: "https://images.unsplash.com/photo-1566054757965-8c4085344c96?auto=format&fit=crop&q=80&w=800",
-      ticketIncluded: true,
-      tags: ["Guided Tour", "Accessible"],
-      cta: "View Ticket Details"
-    },
-    {
-      type: "buffer",
-      mode: "transit",
-      duration: "30 min transit",
-      detail: "Uber XL estimated $25"
-    },
-    {
-      id: 3,
-      time: "01:00 PM",
-      type: "activity",
-      category: "Lunch",
-      title: "Lunch at Le Bernardin",
-      desc: "Experience world-class French seafood in a luxurious setting. Reservation confirmed for 2.",
-      // FIXED IMAGE
-      image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=800",
-      link: "Manage Reservation",
-      icon: Utensils
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      const tripsRes = await tripAPI.getTrips();
+      if (tripsRes.data.success && tripsRes.data.data.length > 0) {
+        const trip = tripsRes.data.data[0];
+        setCurrentTrip(trip);
+        
+        try {
+          const itineraryRes = await aiAPI.getItinerary(trip.id);
+          if (itineraryRes.data.success && itineraryRes.data.data) {
+            setItinerary(itineraryRes.data.data);
+          }
+        } catch (e) {}
+
+        try {
+          const prefsRes = await preferencesAPI.getPreferences();
+          if (prefsRes.data.success) {
+            setPreferences(prefsRes.data.data);
+          }
+        } catch (e) {}
+      }
+    } catch (error) {
+      console.error('Failed to load data:', error);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  const generateItinerary = async () => {
+    if (!currentTrip) return;
+    
+    setIsGenerating(true);
+    try {
+      const response = await aiAPI.generateItinerary({
+        tripId: currentTrip.id,
+        preferences: preferences || {}
+      });
+      
+      if (response.data.success) {
+        setItinerary(response.data.data.plan);
+        setExpandedDays({ 1: true });
+      }
+    } catch (error) {
+      console.error('Failed to generate itinerary:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const toggleDay = (dayNum) => {
+    setExpandedDays(prev => ({ ...prev, [dayNum]: !prev[dayNum] }));
+    setActiveDay(dayNum);
+  };
+
+  const formatDate = (dateStr, dayOffset = 0) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() + dayOffset);
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  const tripDays = currentTrip?.start_date && currentTrip?.end_date
+    ? Math.ceil((new Date(currentTrip.end_date) - new Date(currentTrip.start_date)) / (1000 * 60 * 60 * 24)) + 1
+    : 7;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading your itinerary...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentTrip) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Calendar className="text-teal-600" size={36} />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-800 mb-3">No Trip Selected</h2>
+          <p className="text-slate-500 mb-6">Create a trip first to generate your personalized itinerary.</p>
+          <a href="/dashboard" className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-colors">
+            Go to Dashboard <ArrowRight size={18} />
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-24">
       {/* HEADER */}
-      <div>
-        <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
-          <span className="hover:text-roam-teal cursor-pointer">Home</span>
-          <ChevronRight size={14} />
-          <span className="hover:text-roam-teal cursor-pointer">My Trips</span>
-          <ChevronRight size={14} />
-          <span className="font-bold text-roam-navy">Paris Adventure</span>
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
+            <a href="/dashboard" className="hover:text-teal-600">Dashboard</a>
+            <ChevronRight size={14} />
+            <span className="font-semibold text-slate-800">{currentTrip.destination}</span>
+          </div>
+          <h1 className="text-4xl font-bold text-slate-900">Smart Itinerary</h1>
+          <p className="text-slate-500 mt-1">AI-powered day-by-day travel plan</p>
         </div>
-        <h1 className="text-3xl font-extrabold text-roam-navy">Personalized Itinerary</h1>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* LEFT SIDEBAR */}
-        <aside className="lg:col-span-4 space-y-6 lg:sticky lg:top-32">
-          {/* Map Widget */}
-          <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-md border border-slate-200">
-            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80&w=800')] bg-cover bg-center"></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-            <div className="absolute bottom-4 left-4 text-white">
-              <div className="flex items-center gap-2 mb-1">
-                <MapPin className="text-roam-gold" size={20} />
-                <span className="font-bold text-lg">Paris, France</span>
-              </div>
-              <p className="text-xs text-white/80 pl-7">View full route map</p>
-            </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-slate-600 bg-white px-4 py-2 rounded-xl border border-slate-200">
+            <Calendar className="w-4 h-4 text-teal-500" />
+            {formatDate(currentTrip.start_date)} - {formatDate(currentTrip.end_date)}
           </div>
-
-          {/* Preferences Card */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
-            <div>
-              <h3 className="font-bold text-roam-navy text-lg">Trip Overview</h3>
-              <p className="text-sm text-slate-500">Oct 12 - Oct 15 • 3 Days, 2 Nights</p>
-            </div>
-            <div className="h-px bg-slate-100"></div>
-            <div className="space-y-4">
-              <h4 className="text-xs font-bold text-roam-navy uppercase tracking-wider">Your Preferences</h4>
-              <PreferenceItem icon={Footprints} title="Pace" value="Moderate Pace" />
-              <PreferenceItem icon={Accessibility} title="Accessibility" value="Accessible Routes" />
-              <PreferenceItem icon={Palette} title="Interests" value="Museums & Art" />
-            </div>
-          </div>
-
-          {/* Regenerate Button (FIXED COLOR: Uses roam-teal) */}
-          <button className="w-full bg-roam-teal hover:bg-teal-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-teal-500/20 transition-all flex items-center justify-center gap-2 group">
-            <RefreshCw size={20} className="group-hover:rotate-180 transition-transform duration-500" />
-            Regenerate Itinerary
+          <button
+            onClick={generateItinerary}
+            disabled={isGenerating}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all disabled:opacity-50 shadow-lg shadow-teal-500/25"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles size={18} />
+                {itinerary ? 'Regenerate' : 'Generate'} Itinerary
+              </>
+            )}
           </button>
-        </aside>
-
-        {/* MAIN TIMELINE */}
-        <div className="lg:col-span-8">
-          <div className="sticky top-28 bg-[#F8FAFC]/95 backdrop-blur-sm z-30 pt-2 pb-6 border-b border-slate-200 mb-8 overflow-x-auto">
-            <div className="flex gap-8 min-w-max">
-              <DayTab active={activeDay === 1} day="1" date="Oct 12" title="Downtown" onClick={() => setActiveDay(1)} />
-              <DayTab active={activeDay === 2} day="2" date="Oct 13" title="Historic District" onClick={() => setActiveDay(2)} />
-              <DayTab active={activeDay === 3} day="3" date="Oct 14" title="Departure" onClick={() => setActiveDay(3)} />
-            </div>
-          </div>
-
-          <div className="relative pl-4 md:pl-8 space-y-8">
-            <div className="absolute left-[23px] md:left-[39px] top-4 bottom-0 w-[2px] bg-slate-200"></div>
-            {itineraryData.map((item, index) => (
-              <React.Fragment key={index}>
-                {item.type === 'activity' ? <ActivityCard item={item} /> : <BufferItem item={item} />}
-              </React.Fragment>
-            ))}
-          </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-// --- SUB-COMPONENTS ---
-function PreferenceItem({ icon: Icon, title, value }) {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="p-2 bg-slate-100 rounded-lg text-roam-teal"><Icon size={20} /></div>
-      <div><h5 className="text-sm font-bold text-roam-navy">{title}</h5><p className="text-xs text-slate-500 mt-0.5">{value}</p></div>
-    </div>
-  );
-}
-
-function DayTab({ active, day, date, title, onClick }) {
-  return (
-    <button onClick={onClick} className={`flex flex-col items-center pb-3 min-w-[120px] transition-all border-b-[3px] ${active ? 'border-roam-teal text-roam-navy' : 'border-transparent text-slate-400 hover:text-roam-teal'}`}>
-      <span className={`text-xs font-bold uppercase tracking-wider mb-1 ${active ? 'text-roam-teal' : ''}`}>{date}</span>
-      <span className="text-lg font-bold">Day {day}: {title}</span>
-    </button>
-  );
-}
-
-function ActivityCard({ item }) {
-  return (
-    <div className="relative pl-10 group">
-      <div className="absolute left-[12px] md:left-[28px] top-6 w-[22px] h-[22px] rounded-full border-[4px] border-white bg-roam-teal shadow-sm z-10"></div>
-      <div className="flex flex-col sm:flex-row bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:shadow-lg transition-all">
-        {/* FIXED IMAGE: Added bg-slate-200 fallback */}
-        <div className="w-full sm:w-48 h-48 sm:h-auto bg-slate-200 bg-cover bg-center relative shrink-0" style={{ backgroundImage: `url(${item.image})` }}></div>
-        <div className="p-5 flex-1 flex flex-col justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-roam-navy mb-2">{item.title}</h3>
-            <p className="text-slate-500 text-sm leading-relaxed mb-4">{item.desc}</p>
-          </div>
-          <div className="flex items-center gap-4">
-            {item.cta ? (
-              <button className="text-sm font-bold text-roam-teal bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-lg transition-colors">{item.cta}</button>
-            ) : (
-              <button className="flex items-center gap-1 text-xs font-bold text-roam-teal hover:underline uppercase tracking-wide">{item.link} <ExternalLink size={14} /></button>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* LEFT: DAY SELECTOR */}
+        <aside className="lg:col-span-3 space-y-4">
+          {/* Trip Overview Card */}
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-teal-500/20 rounded-xl flex items-center justify-center">
+                <MapPinned className="text-teal-400" size={24} />
+              </div>
+              <div>
+                <h3 className="font-bold">{currentTrip.destination}</h3>
+                <p className="text-sm text-slate-400">{tripDays} days trip</p>
+              </div>
+            </div>
+            {itinerary && (
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <div className="bg-white/10 rounded-xl p-3 text-center">
+                  <p className="text-2xl font-bold">{itinerary.days?.length || tripDays}</p>
+                  <p className="text-xs text-slate-400">Days</p>
+                </div>
+                <div className="bg-white/10 rounded-xl p-3 text-center">
+                  <p className="text-2xl font-bold">
+                    {itinerary.days?.reduce((sum, day) => sum + (day.activities?.length || 0), 0) || 0}
+                  </p>
+                  <p className="text-xs text-slate-400">Activities</p>
+                </div>
+              </div>
             )}
           </div>
-        </div>
+
+          {/* Day Tabs */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-2">
+            <h3 className="font-semibold text-slate-800 mb-3 px-2">Days Overview</h3>
+            {Array.from({ length: tripDays }, (_, i) => i + 1).map(day => (
+              <button
+                key={day}
+                onClick={() => toggleDay(day)}
+                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
+                  activeDay === day 
+                    ? 'bg-teal-50 border border-teal-200 text-teal-700' 
+                    : 'hover:bg-slate-50 text-slate-600'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
+                    activeDay === day ? 'bg-teal-500 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {day}
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-sm">Day {day}</p>
+                    <p className="text-xs text-slate-500">{formatDate(currentTrip.start_date, day - 1)}</p>
+                  </div>
+                </div>
+                {itinerary?.days?.[day - 1]?.activities && (
+                  <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
+                    {itinerary.days[day - 1].activities.length}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        {/* RIGHT: ITINERARY CONTENT */}
+        <main className="lg:col-span-9">
+          {!itinerary ? (
+            <EmptyItinerary onGenerate={generateItinerary} isGenerating={isGenerating} destination={currentTrip.destination} />
+          ) : (
+            <div className="space-y-6">
+              {itinerary.days?.map((day, dayIndex) => (
+                <DayCard 
+                  key={dayIndex}
+                  day={day}
+                  dayNumber={dayIndex + 1}
+                  date={formatDate(currentTrip.start_date, dayIndex)}
+                  isExpanded={expandedDays[dayIndex + 1]}
+                  onToggle={() => toggleDay(dayIndex + 1)}
+                />
+              ))}
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );
 }
 
-function BufferItem({ item }) {
+function EmptyItinerary({ onGenerate, isGenerating, destination }) {
   return (
-    <div className="relative pl-10 py-2">
-      <div className="absolute left-[14px] md:left-[30px] top-1/2 -translate-y-1/2 w-6 h-6 bg-[#F8FAFC] z-10 flex items-center justify-center">
-        {item.mode === 'walk' ? <Footprints size={16} className="text-slate-400" /> : <Car size={16} className="text-slate-400" />}
+    <div className="bg-gradient-to-br from-slate-50 to-white rounded-3xl border-2 border-dashed border-slate-200 p-12 text-center">
+      <div className="w-24 h-24 bg-gradient-to-br from-teal-100 to-teal-200 rounded-full flex items-center justify-center mx-auto mb-6">
+        <Sparkles className="text-teal-600" size={40} />
       </div>
-      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 border border-slate-200">
-        <span className="text-xs font-bold text-slate-600">{item.duration}</span>
-      </div>
+      <h2 className="text-3xl font-bold text-slate-800 mb-4">Generate Your AI Itinerary</h2>
+      <p className="text-slate-500 text-lg mb-8 max-w-lg mx-auto">
+        Let our AI create a personalized day-by-day plan for your trip to {destination}, 
+        tailored to your preferences and travel style.
+      </p>
+      <button
+        onClick={onGenerate}
+        disabled={isGenerating}
+        className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-bold text-lg rounded-2xl hover:from-teal-600 hover:to-teal-700 transition-all disabled:opacity-50 shadow-xl shadow-teal-500/30"
+      >
+        {isGenerating ? (
+          <>
+            <Loader2 size={24} className="animate-spin" />
+            Generating Magic...
+          </>
+        ) : (
+          <>
+            <Sparkles size={24} />
+            Generate Smart Itinerary
+          </>
+        )}
+      </button>
+      <p className="text-sm text-slate-400 mt-6">Based on your travel preferences and local insights</p>
+    </div>
+  );
+}
+
+function DayCard({ day, dayNumber, date, isExpanded, onToggle }) {
+  const getTimeOfDay = (time) => {
+    if (!time) return 'morning';
+    const hour = parseInt(time.split(':')[0]);
+    if (hour < 12) return 'morning';
+    if (hour < 17) return 'afternoon';
+    return 'evening';
+  };
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      {/* Day Header */}
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between p-6 hover:bg-slate-50 transition-colors"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-teal-500/25">
+            {dayNumber}
+          </div>
+          <div className="text-left">
+            <h3 className="text-xl font-bold text-slate-800">Day {dayNumber}</h3>
+            <p className="text-slate-500">{date} • {day.theme || `Exploring the city`}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="px-3 py-1 bg-slate-100 text-slate-600 text-sm font-medium rounded-full">
+            {day.activities?.length || 0} activities
+          </span>
+          <ChevronDown size={24} className={`text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+
+      {/* Activities */}
+      {isExpanded && day.activities && (
+        <div className="border-t border-slate-100 p-6 bg-slate-50/50">
+          <div className="space-y-4">
+            {day.activities.map((activity, idx) => {
+              const timeOfDay = getTimeOfDay(activity.time);
+              const TimeIcon = TIME_ICONS[timeOfDay]?.icon || Sun;
+              const ActivityIcon = ACTIVITY_ICONS[activity.type?.toLowerCase()] || ACTIVITY_ICONS.default;
+              
+              return (
+                <div key={idx} className="flex gap-4 items-start">
+                  {/* Time Column */}
+                  <div className="w-20 shrink-0 text-center">
+                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl ${TIME_ICONS[timeOfDay]?.bg || 'bg-slate-100'}`}>
+                      <TimeIcon size={18} className={TIME_ICONS[timeOfDay]?.color || 'text-slate-500'} />
+                    </div>
+                    <p className="text-sm font-medium text-slate-600 mt-1">{activity.time || '—'}</p>
+                  </div>
+
+                  {/* Activity Card */}
+                  <div className="flex-1 bg-white rounded-xl border border-slate-200 p-4 hover:border-teal-200 hover:shadow-sm transition-all">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-teal-50 rounded-lg">
+                          <ActivityIcon size={20} className="text-teal-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-slate-800">{activity.name || activity.activity}</h4>
+                          {activity.location && (
+                            <p className="text-sm text-slate-500 flex items-center gap-1 mt-1">
+                              <MapPin size={12} />
+                              {activity.location}
+                            </p>
+                          )}
+                          {activity.description && (
+                            <p className="text-sm text-slate-600 mt-2">{activity.description}</p>
+                          )}
+                          {activity.tips && (
+                            <div className="mt-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                              <p className="text-sm text-amber-800">💡 {activity.tips}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {activity.duration && (
+                        <span className="text-xs text-slate-500 flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-full">
+                          <Clock size={12} />
+                          {activity.duration}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

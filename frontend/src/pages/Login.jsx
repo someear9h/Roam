@@ -1,16 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Globe, Mail, Lock, ArrowRight, Star, User } from 'lucide-react';
-import { authAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { preferencesAPI } from '../services/api';
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login, register, isAuthenticated, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('alex@roam.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState('');
+  const [hasNavigated, setHasNavigated] = useState(false);
+
+  // Redirect if already authenticated (only for returning users, not fresh registrations)
+  useEffect(() => {
+    if (isAuthenticated && !isSignUp && !hasNavigated) {
+      setHasNavigated(true);
+      checkOnboardingAndRedirect();
+    }
+  }, [isAuthenticated]);
+
+  const checkOnboardingAndRedirect = async () => {
+    try {
+      const response = await preferencesAPI.checkOnboardingStatus();
+      if (response.data.success && !response.data.data.completed) {
+        // New user, go to onboarding
+        navigate('/onboarding', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
+    } catch (err) {
+      // If preferences don't exist, redirect to onboarding
+      navigate('/onboarding', { replace: true });
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -18,24 +44,20 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // Try to connect to backend
-      const response = await authAPI.login({ email, password });
-      
-      if (response.data.success) {
-        localStorage.setItem('token', response.data.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.data));
-        navigate('/');
+      const result = await login(email, password);
+      if (result?.success) {
+        // checkOnboardingAndRedirect will be called via useEffect
       }
     } catch (err) {
       console.error("Login Error:", err);
-      // Fallback: If backend fails (500 error), allow login for DEMO purposes
-      // REMOVE THIS BLOCK IN PRODUCTION
-      if (err.message || err.response?.status === 500) {
-          console.warn("Backend unavailable. Logging in with Demo Mode.");
-          navigate('/'); 
-          return;
+      const errorData = err.response?.data?.error;
+      // Handle Zod validation errors (object) vs simple string errors
+      if (typeof errorData === 'object') {
+        const firstError = Object.values(errorData).find(e => e?._errors?.length);
+        setError(firstError?._errors?.[0] || 'Login failed.');
+      } else {
+        setError(errorData || 'Invalid email or password.');
       }
-      setError(err.response?.data?.error || 'Login failed. Please check backend connection.');
     } finally {
       setIsLoading(false);
     }
@@ -44,18 +66,41 @@ export default function Login() {
   const handleSignUp = async (e) => {
     e.preventDefault();
     setError('');
+    
+    if (!name.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+    if (!email.trim()) {
+      setError('Please enter your email');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const response = await authAPI.register({ name, email, password, phone: '', language: 'en' });
-      if (response.data.success) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.data));
-        navigate('/');
+      const result = await register(name, email, password, '', 'en');
+      if (result?.success) {
+        // New user, redirect to onboarding immediately
+        setHasNavigated(true);
+        navigate('/onboarding', { replace: true });
       }
     } catch (err) {
       console.error("Register Error:", err);
-      setError(err.response?.data?.error || 'Registration failed.');
+      const errorData = err.response?.data?.error;
+      // Handle Zod validation errors (object) vs simple string errors
+      if (typeof errorData === 'object') {
+        const firstError = Object.values(errorData).find(e => e?._errors?.length);
+        setError(firstError?._errors?.[0] || 'Registration failed.');
+      } else if (err.response?.status === 409) {
+        setError('An account with this email already exists.');
+      } else {
+        setError(errorData || 'Registration failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

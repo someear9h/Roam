@@ -34,6 +34,9 @@ app.use('/api/trips', require('./routes/trip.routes'));
 app.use('/api/ai', require('./routes/ai.routes'));
 app.use('/api/destination', require('./routes/destination.routes'));
 app.use('/api/emergency', require('./routes/emergency.routes'));
+app.use('/api/preferences', require('./routes/preferences.routes'));
+app.use('/api/alerts', require('./routes/alerts.routes'));
+app.use('/api/summary', require('./routes/summary.routes'));
 
 app.use(require('./middlewares/error.middleware'));
 

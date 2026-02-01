@@ -27,13 +27,18 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.login({ email, password });
       if (response.data.success) {
-        setToken(response.data.data.token);
-        setUser(response.data.data);
+        const authToken = response.data.data.token;
+        const userData = { ...response.data.data };
+        setToken(authToken);
+        setUser(userData);
         setIsAuthenticated(true);
-        localStorage.setItem('token', response.data.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.data));
-        return response.data;
+        localStorage.setItem('token', authToken);
+        localStorage.setItem('user', JSON.stringify(userData));
+        return { success: true, data: userData };
       }
+    } catch (error) {
+      setIsLoading(false);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -44,13 +49,19 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.register({ name, email, password, phone, language });
       if (response.data.success) {
-        setToken(response.data.token);
-        setUser(response.data.data);
+        // Backend returns token at response.data.token (not in data.data)
+        const authToken = response.data.token;
+        const userData = { ...response.data.data, token: authToken };
+        setToken(authToken);
+        setUser(userData);
         setIsAuthenticated(true);
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.data));
-        return response.data;
+        localStorage.setItem('token', authToken);
+        localStorage.setItem('user', JSON.stringify(userData));
+        return { success: true, data: userData };
       }
+    } catch (error) {
+      setIsLoading(false);
+      throw error;
     } finally {
       setIsLoading(false);
     }

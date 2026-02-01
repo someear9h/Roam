@@ -1,209 +1,373 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Phone, MapPin, Share2, Shield, Flag, Navigation, 
-  Siren, Flame, Ambulance, Headphones, MessageCircle, 
-  FileText, AlertTriangle, Languages, FileHeart
+  Phone, MapPin, Share2, Shield, Navigation, Siren, Ambulance, 
+  Headphones, MessageCircle, FileText, AlertTriangle, Languages, 
+  Loader2, Send, ChevronRight, Heart, Building, Globe, Copy,
+  Check, ExternalLink, Users, Clock, PhoneCall, X
 } from 'lucide-react';
+import { emergencyAPI, tripAPI } from '../services/api';
 
 export default function Emergency() {
   const [isSharing, setIsSharing] = useState(false);
+  const [location, setLocation] = useState({ city: 'Detecting...', country: '', lat: null, lng: null });
+  const [issueText, setIssueText] = useState('');
+  const [isLoadingHelp, setIsLoadingHelp] = useState(false);
+  const [aiHelp, setAiHelp] = useState(null);
+  const [tripId, setTripId] = useState(null);
+  const [currentTrip, setCurrentTrip] = useState(null);
+  const [copiedNumber, setCopiedNumber] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+
+  useEffect(() => {
+    loadTrip();
+    detectLocation();
+  }, []);
+
+  const loadTrip = async () => {
+    try {
+      const res = await tripAPI.getTrips();
+      if (res.data.success && res.data.data.length > 0) {
+        setTripId(res.data.data[0].id);
+        setCurrentTrip(res.data.data[0]);
+      }
+    } catch (e) {}
+  };
+
+  const detectLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&format=json`
+          );
+          const data = await response.json();
+          setLocation({
+            city: data.address?.city || data.address?.town || 'Unknown',
+            country: data.address?.country || 'Unknown',
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+        } catch (e) {
+          setLocation({ city: 'Location detected', country: '', lat: position.coords.latitude, lng: position.coords.longitude });
+        }
+      }, () => {
+        setLocation({ city: 'Unable to detect', country: '', lat: null, lng: null });
+      });
+    }
+  };
+
+  const getEmergencyHelp = async () => {
+    if (!issueText.trim()) return;
+    
+    setIsLoadingHelp(true);
+    try {
+      const response = await emergencyAPI.getEmergencyInfo({
+        tripId: tripId || 1,
+        issue: issueText
+      });
+
+      if (response.data.success) {
+        setAiHelp(response.data.data.response);
+      }
+    } catch (error) {
+      setAiHelp('Unable to connect. For immediate help, call the local emergency number: 112 (Europe) or 911 (USA)');
+    } finally {
+      setIsLoadingHelp(false);
+    }
+  };
+
+  const shareLocation = () => {
+    setShowShareModal(true);
+    setIsSharing(true);
+    
+    if (navigator.share && location.lat) {
+      navigator.share({
+        title: 'Emergency - My Location',
+        text: `I need help! My current location:`,
+        url: `https://maps.google.com/?q=${location.lat},${location.lng}`
+      }).catch(() => {});
+    }
+  };
+
+  const copyNumber = (number) => {
+    navigator.clipboard.writeText(number);
+    setCopiedNumber(number);
+    setTimeout(() => setCopiedNumber(null), 2000);
+  };
+
+  const callNumber = (number) => {
+    window.location.href = `tel:${number}`;
+  };
+
+  const emergencyNumbers = [
+    { label: 'Emergency (EU)', number: '112', icon: Siren, color: 'red', description: 'Police, Fire, Ambulance' },
+    { label: 'Police', number: '17', icon: Shield, color: 'blue', description: 'Local police department' },
+    { label: 'Ambulance', number: '15', icon: Ambulance, color: 'green', description: 'Medical emergencies' },
+    { label: 'Fire', number: '18', icon: Siren, color: 'orange', description: 'Fire department' },
+  ];
 
   return (
-    <div className="flex flex-col space-y-8 pb-24">
-      
-      {/* --- 1. HEADER SECTION --- */}
+    <div className="space-y-8 pb-24">
+      {/* SHARE LOCATION MODAL */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl w-full max-w-md p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Check className="text-green-600" size={32} />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">Location Shared</h3>
+            <p className="text-slate-500 mb-6">
+              Your live location is being shared. Emergency contacts will be able to see your location.
+            </p>
+            {location.lat && (
+              <a 
+                href={`https://maps.google.com/?q=${location.lat},${location.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-teal-600 font-semibold hover:underline mb-6"
+              >
+                <ExternalLink size={18} />
+                View on Google Maps
+              </a>
+            )}
+            <button
+              onClick={() => setShowShareModal(false)}
+              className="w-full py-4 bg-slate-100 text-slate-700 font-semibold rounded-2xl hover:bg-slate-200 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-red-600 font-bold text-sm tracking-wide uppercase mb-2">
+          <div className="flex items-center gap-2 mb-2">
             <span className="relative flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
             </span>
-            Emergency Mode Active
+            <span className="text-red-600 font-bold text-sm uppercase tracking-wider">Emergency Mode</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
-            Emergency Assistance
-          </h1>
-          <div className="flex items-center gap-2 mt-2 text-lg text-slate-500 font-medium">
-            <MapPin size={20} className="text-slate-400" />
-            Detected Location: <span className="text-slate-900 font-bold">Paris, France</span>
-            <button className="text-sm text-teal-600 font-bold ml-2 hover:underline">Change</button>
-          </div>
-        </div>
-        <p className="hidden md:block text-sm text-slate-400 font-medium">Last updated: Just now</p>
-      </div>
-
-      {/* --- 2. CRITICAL ACTIONS --- */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
-        
-        {/* Giant Call Button */}
-        <div className="md:col-span-7 flex flex-col">
-          <button className="group relative flex-1 w-full min-h-[180px] cursor-pointer flex flex-col items-center justify-center rounded-[2rem] bg-red-500 hover:bg-red-600 text-white shadow-xl shadow-red-200 transition-all duration-300 hover:-translate-y-1 overflow-hidden">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/diagonal-stripes.png')]"></div>
-            
-            <div className="relative z-10 flex flex-col items-center gap-4">
-              <div className="p-4 bg-white/20 rounded-full backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
-                <Phone size={48} fill="currentColor" />
-              </div>
-              <div className="text-center">
-                <span className="block text-3xl md:text-4xl font-bold tracking-tight">Emergency Call (112)</span>
-                <span className="block text-sm font-medium opacity-90 mt-1">Tap to dial local emergency services immediately</span>
-              </div>
-            </div>
-          </button>
-        </div>
-
-        {/* Share Location Panel */}
-        <div className="md:col-span-5 flex flex-col">
-          <div className={`h-full flex flex-col justify-center rounded-[2rem] border p-8 shadow-sm transition-colors ${isSharing ? 'bg-green-50 border-green-200' : 'bg-white border-slate-100'}`}>
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`p-2 rounded-full ${isSharing ? 'bg-green-100 text-green-600' : 'bg-blue-50 text-teal-600'}`}>
-                <Share2 size={24} />
-              </div>
-              <h3 className="font-bold text-xl text-slate-900">Share Live Location</h3>
-            </div>
-            
-            <p className="text-slate-500 text-sm mb-8 leading-relaxed">
-              Securely broadcast your real-time GPS coordinates to your designated trusted contacts list.
-            </p>
-
-            <div className="flex items-center justify-between bg-white p-2 pr-3 rounded-full border border-slate-100 shadow-sm">
-              <span className={`font-bold text-sm px-4 ${isSharing ? 'text-green-600' : 'text-slate-400'}`}>
-                {isSharing ? 'Broadcasting Live...' : 'Broadcasting Off'}
-              </span>
-              
-              {/* Toggle Switch */}
-              <button 
-                onClick={() => setIsSharing(!isSharing)}
-                className={`relative w-14 h-8 rounded-full transition-colors duration-300 focus:outline-none ${isSharing ? 'bg-green-500' : 'bg-slate-200'}`}
-              >
-                <div className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow-sm transition-transform duration-300 ${isSharing ? 'translate-x-6' : 'translate-x-0'}`}></div>
-              </button>
-            </div>
+          <h1 className="text-4xl font-bold text-slate-900">Emergency Assistance</h1>
+          <div className="flex items-center gap-2 mt-2 text-slate-500">
+            <MapPin size={18} className="text-slate-400" />
+            <span>
+              {location.city}{location.country ? `, ${location.country}` : ''}
+            </span>
+            <button onClick={detectLocation} className="text-teal-600 text-sm font-semibold hover:underline">
+              Refresh
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="h-px w-full bg-slate-100 my-4"></div>
-
-      {/* --- 3. LOCAL SUPPORT GRID --- */}
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-          <div className="p-2 bg-blue-50 text-teal-600 rounded-lg">
-            <Shield size={24} />
+      {/* CRITICAL ACTIONS */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* EMERGENCY CALL BUTTON */}
+        <button 
+          onClick={() => callNumber('112')}
+          className="relative group bg-gradient-to-br from-red-500 to-red-600 rounded-3xl p-8 text-white overflow-hidden hover:from-red-600 hover:to-red-700 transition-all shadow-xl shadow-red-500/30"
+        >
+          <div className="absolute inset-0 bg-white/5 opacity-50"></div>
+          <div className="relative z-10 flex flex-col items-center text-center">
+            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Phone size={40} />
+            </div>
+            <h2 className="text-3xl font-bold mb-2">Call Emergency</h2>
+            <p className="text-red-100 mb-4">Tap to dial 112 immediately</p>
+            <span className="text-5xl font-bold">112</span>
           </div>
-          Local Support
-        </h2>
+        </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* SHARE LOCATION */}
+        <div className={`rounded-3xl p-8 border-2 transition-all ${
+          isSharing ? 'bg-green-50 border-green-300' : 'bg-white border-slate-200'
+        }`}>
+          <div className="flex items-center gap-4 mb-6">
+            <div className={`p-4 rounded-2xl ${isSharing ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-600'}`}>
+              <Share2 size={28} />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-slate-800">Share Live Location</h3>
+              <p className="text-slate-500 text-sm">
+                {isSharing ? 'Broadcasting your location...' : 'Send your GPS coordinates to emergency contacts'}
+              </p>
+            </div>
+          </div>
           
-          {/* Embassy Card */}
-          <div className="flex flex-col rounded-[2rem] border border-slate-100 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-            <div className="h-32 bg-slate-200 relative">
-              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&q=80&w=600")' }}></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-              <div className="absolute bottom-4 left-6 text-white font-bold text-lg flex items-center gap-2">
-                <Flag size={18} /> Local Embassy
-              </div>
-            </div>
-            <div className="p-6 flex flex-col gap-4 flex-1">
-              <div>
-                <h3 className="font-bold text-xl text-slate-900">Embassy of the United States</h3>
-                <p className="text-sm text-slate-500 mt-1">2 Avenue Gabriel, 75008 Paris, France</p>
-              </div>
-              <div className="flex items-center gap-3 mt-auto pt-2">
-                <button className="flex-1 bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors">
-                  <Phone size={18} /> Call
-                </button>
-                <button className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors">
-                  <Navigation size={18} /> Directions
-                </button>
-              </div>
-            </div>
-          </div>
+          <button
+            onClick={shareLocation}
+            className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
+              isSharing 
+                ? 'bg-green-500 text-white hover:bg-green-600' 
+                : 'bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700'
+            }`}
+          >
+            {isSharing ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                Sharing Location...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                <Navigation size={20} />
+                Share My Location
+              </span>
+            )}
+          </button>
+          
+          {location.lat && (
+            <p className="text-sm text-slate-500 mt-4 text-center">
+              📍 {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+            </p>
+          )}
+        </div>
+      </div>
 
-          {/* Emergency Services Card */}
-          <div className="flex flex-col rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-slate-50">
-              <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-500">
-                <Siren size={24} />
-              </div>
-              <div>
-                <h3 className="font-bold text-lg text-slate-900">Local Emergency Services</h3>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-wide">Verified for Paris, FR</p>
-              </div>
-            </div>
+      {/* EMERGENCY NUMBERS */}
+      <div>
+        <h2 className="text-2xl font-bold text-slate-800 mb-4">Emergency Numbers</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {emergencyNumbers.map((item, idx) => {
+            const colorClasses = {
+              red: 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100',
+              blue: 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100',
+              green: 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100',
+              orange: 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100',
+            };
             
-            <div className="flex flex-col gap-3 flex-1">
-              <EmergencyNumberRow icon={Shield} color="text-blue-600" label="Police" number="17" />
-              <EmergencyNumberRow icon={Ambulance} color="text-red-600" label="Ambulance" number="15" />
-              <EmergencyNumberRow icon={Flame} color="text-orange-600" label="Fire" number="18" />
-            </div>
+            return (
+              <div key={idx} className={`rounded-2xl border-2 p-5 transition-all ${colorClasses[item.color]}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <item.icon size={24} />
+                  <button 
+                    onClick={() => copyNumber(item.number)}
+                    className="p-1 hover:bg-black/10 rounded-lg transition-colors"
+                  >
+                    {copiedNumber === item.number ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                </div>
+                <p className="font-bold text-lg mb-1">{item.label}</p>
+                <p className="text-3xl font-bold mb-2">{item.number}</p>
+                <p className="text-sm opacity-80">{item.description}</p>
+                <button
+                  onClick={() => callNumber(item.number)}
+                  className="mt-4 w-full py-2 bg-white/50 rounded-xl font-semibold text-sm hover:bg-white transition-colors flex items-center justify-center gap-2"
+                >
+                  <PhoneCall size={16} /> Call Now
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* AI EMERGENCY HELP */}
+      <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-4 flex items-center gap-3">
+          <div className="p-2 bg-white/20 rounded-xl">
+            <MessageCircle size={24} className="text-white" />
+          </div>
+          <div>
+            <h3 className="font-bold text-white">AI Emergency Assistant</h3>
+            <p className="text-sm text-amber-100">Describe your situation for immediate guidance</p>
           </div>
         </div>
-      </div>
-
-      {/* --- 4. TBO HUMAN SUPPORT BANNER (Fixed Visibility) --- */}
-      <div className="rounded-[2rem] bg-blue-600 text-white p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 relative overflow-hidden shadow-xl shadow-blue-500/30">
-        <div className="absolute right-0 top-0 h-full w-1/2 bg-white/10 skew-x-12 translate-x-1/4"></div>
         
-        <div className="relative z-10 flex flex-col gap-2 max-w-lg">
-          <h2 className="text-2xl font-bold flex items-center gap-3">
-            <Headphones size={28} />
-            TBO Human Support
-          </h2>
-          {/* Changed text color to white/90 so it's visible on blue background */}
-          <p className="text-white/90 font-medium text-base leading-relaxed">
-            Need help with your booking or facing a non-emergency issue? Our team is available 24/7 to assist you immediately.
-          </p>
-        </div>
+        <div className="p-6">
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={issueText}
+              onChange={(e) => setIssueText(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && getEmergencyHelp()}
+              placeholder="e.g., I lost my passport, I'm having a medical issue..."
+              className="flex-1 px-5 py-4 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+            />
+            <button
+              onClick={getEmergencyHelp}
+              disabled={isLoadingHelp || !issueText.trim()}
+              className="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-2xl hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 transition-all flex items-center gap-2"
+            >
+              {isLoadingHelp ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
+            </button>
+          </div>
 
-        <div className="relative z-10 flex flex-wrap gap-3 w-full md:w-auto">
-          <button className="flex-1 md:flex-none min-w-[150px] bg-white text-blue-600 hover:bg-blue-50 font-bold py-3.5 px-6 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2">
-            <MessageCircle size={20} />
-            Start Chat
-          </button>
-          <button className="flex-1 md:flex-none min-w-[150px] bg-blue-700 hover:bg-blue-800 text-white border border-white/20 font-bold py-3.5 px-6 rounded-xl transition-colors flex items-center justify-center gap-2">
-            <Phone size={20} />
-            Call Support
-          </button>
+          {/* Quick Issues */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {['Lost passport', 'Medical emergency', 'Theft/robbery', 'Lost/stranded', 'Accident'].map((issue) => (
+              <button
+                key={issue}
+                onClick={() => { setIssueText(issue); }}
+                className="px-4 py-2 bg-slate-100 text-slate-600 text-sm rounded-full hover:bg-slate-200 transition-colors"
+              >
+                {issue}
+              </button>
+            ))}
+          </div>
+
+          {aiHelp && (
+            <div className="mt-6 p-6 bg-amber-50 border border-amber-100 rounded-2xl">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="text-amber-600 shrink-0 mt-1" size={20} />
+                <div>
+                  <h4 className="font-bold text-amber-800 mb-2">Emergency Guidance</h4>
+                  <p className="text-amber-700 leading-relaxed whitespace-pre-wrap">{aiHelp}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* --- 5. FOOTER QUICK LINKS --- */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <QuickLink icon={FileText} label="Insurance Policy" />
-        <QuickLink icon={AlertTriangle} label="Report Incident" />
-        <QuickLink icon={Languages} label="Translation Help" />
-        <QuickLink icon={FileHeart} label="Medical History" />
+      {/* ADDITIONAL RESOURCES */}
+      <div className="grid md:grid-cols-3 gap-6">
+        <ResourceCard 
+          icon={Building}
+          title="Embassy Information"
+          description="Find your country's embassy or consulate"
+          action="Get Embassy Info"
+          onClick={() => { setIssueText('Find my country\'s embassy contact'); getEmergencyHelp(); }}
+        />
+        <ResourceCard 
+          icon={Heart}
+          title="Nearest Hospital"
+          description="Locate medical facilities nearby"
+          action="Find Hospital"
+          onClick={() => { setIssueText('Find the nearest hospital'); getEmergencyHelp(); }}
+        />
+        <ResourceCard 
+          icon={Globe}
+          title="Travel Insurance"
+          description="Access your insurance provider"
+          action="Insurance Help"
+          onClick={() => { setIssueText('How do I contact my travel insurance?'); getEmergencyHelp(); }}
+        />
       </div>
-
     </div>
   );
 }
 
-// --- SUB-COMPONENTS ---
-
-function EmergencyNumberRow({ icon: Icon, color, label, number }) {
+function ResourceCard({ icon: Icon, title, description, action, onClick }) {
   return (
-    <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100">
-      <div className="flex items-center gap-4">
-        <Icon className={color} size={20} />
-        <span className="font-bold text-slate-700">{label}</span>
+    <div className="bg-white rounded-2xl border border-slate-200 p-6 hover:shadow-md transition-shadow">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-3 bg-slate-100 rounded-xl text-slate-600">
+          <Icon size={24} />
+        </div>
+        <div>
+          <h3 className="font-bold text-slate-800">{title}</h3>
+          <p className="text-sm text-slate-500">{description}</p>
+        </div>
       </div>
-      <span className="font-black text-xl text-slate-900">{number}</span>
+      <button
+        onClick={onClick}
+        className="w-full py-3 bg-slate-100 text-slate-700 font-semibold rounded-xl hover:bg-slate-200 transition-colors flex items-center justify-center gap-2"
+      >
+        {action} <ChevronRight size={18} />
+      </button>
     </div>
-  );
-}
-
-function QuickLink({ icon: Icon, label }) {
-  return (
-    <a href="#" className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl bg-white border border-slate-100 hover:border-teal-500/30 hover:shadow-md transition-all group text-center">
-      <div className="p-2 bg-slate-50 rounded-lg text-slate-400 group-hover:text-teal-600 group-hover:bg-teal-50 transition-colors">
-        <Icon size={24} />
-      </div>
-      <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900 transition-colors">{label}</span>
-    </a>
   );
 }

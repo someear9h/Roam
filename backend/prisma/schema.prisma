@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id                  Int      @id @default(autoincrement())
+  id                  String   @id @default(uuid())
   name                String?
   email               String   @unique
   phone               String?
@@ -17,11 +17,12 @@ model User {
   password            String
   created_at          DateTime @default(now())
   trips               Trip[]
+  preferences         UserPreferences?
 }
 
 model Trip {
   id           Int          @id @default(autoincrement())
-  user_id      Int
+  user_id      String
   destination  String
   start_date   DateTime?
   end_date     DateTime?
@@ -57,4 +58,48 @@ model Destination {
   emergency_contacts  Json     @default("{}")
   highlights          Json     @default("[]")
   updated_at          DateTime @default(now())
+}
+
+model UserPreferences {
+  id                  Int      @id @default(autoincrement())
+  user_id             String   @unique
+  travel_style        String   @default("balanced") // relaxed, balanced, packed
+  food_preference     String   @default("all") // veg, non-veg, vegan, all
+  pace                String   @default("moderate") // slow, moderate, fast
+  interests           Json     @default("[]") // array of interests
+  budget_level        String   @default("moderate") // budget, moderate, luxury
+  onboarding_complete Boolean  @default(false)
+  updated_at          DateTime @default(now())
+  user                User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Alert {
+  id          Int      @id @default(autoincrement())
+  trip_id     Int
+  type        String   // weather, flight, safety, reminder
+  title       String
+  message     String   @db.Text
+  priority    String   @default("medium") // low, medium, high, critical
+  is_read     Boolean  @default(false)
+  created_at  DateTime @default(now())
+}
+
+model TripMemory {
+  id          Int      @id @default(autoincrement())
+  trip_id     Int
+  type        String   // place_visited, photo, note, highlight
+  title       String
+  description String?  @db.Text
+  data        Json     @default("{}")
+  created_at  DateTime @default(now())
+}
+
+model TripFeedback {
+  id              Int      @id @default(autoincrement())
+  trip_id         Int      @unique
+  rating          Int      // 1-5
+  highlights      Json     @default("[]")
+  improvements    String?  @db.Text
+  would_recommend Boolean  @default(true)
+  created_at      DateTime @default(now())
 }

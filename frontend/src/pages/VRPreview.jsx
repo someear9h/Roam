@@ -1,246 +1,392 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { 
-  X, Sun, Moon, CloudSun, Users, Minus, Plus, 
-  RotateCcw, RotateCw, ArrowRight, Map, Bed, Camera, 
-  Info, Maximize, MapPin
+  ArrowLeft, Play, Pause, Volume2, VolumeX, Maximize2, 
+  RotateCcw, ChevronLeft, ChevronRight, MapPin, Star, 
+  Camera, Clock, Sparkles, Eye, Heart, Share2, Info
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { tripAPI } from '../services/api';
+
+// Sample VR/360 destinations with placeholder images
+const VR_DESTINATIONS = [
+  {
+    id: 1,
+    name: 'Eiffel Tower',
+    location: 'Paris, France',
+    image: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=1200',
+    thumbnail: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=400',
+    description: 'Experience the iconic iron lattice tower from 360°',
+    rating: 4.9,
+    views: '2.3M',
+    category: 'Landmarks'
+  },
+  {
+    id: 2,
+    name: 'Santorini Sunset',
+    location: 'Oia, Greece',
+    image: 'https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?w=1200',
+    thumbnail: 'https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?w=400',
+    description: 'Witness the famous Santorini sunset over the caldera',
+    rating: 4.8,
+    views: '1.8M',
+    category: 'Scenic'
+  },
+  {
+    id: 3,
+    name: 'Machu Picchu',
+    location: 'Cusco, Peru',
+    image: 'https://images.unsplash.com/photo-1587595431973-160d0d94add1?w=1200',
+    thumbnail: 'https://images.unsplash.com/photo-1587595431973-160d0d94add1?w=400',
+    description: 'Explore the ancient Incan citadel in the clouds',
+    rating: 4.9,
+    views: '3.1M',
+    category: 'Historical'
+  },
+  {
+    id: 4,
+    name: 'Tokyo Streets',
+    location: 'Shibuya, Japan',
+    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=1200',
+    thumbnail: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400',
+    description: 'Walk through the vibrant neon-lit streets of Tokyo',
+    rating: 4.7,
+    views: '2.1M',
+    category: 'Urban'
+  },
+  {
+    id: 5,
+    name: 'Northern Lights',
+    location: 'Tromsø, Norway',
+    image: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1200',
+    thumbnail: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=400',
+    description: 'Witness the magical Aurora Borealis dance',
+    rating: 5.0,
+    views: '4.5M',
+    category: 'Natural Wonder'
+  },
+  {
+    id: 6,
+    name: 'Great Barrier Reef',
+    location: 'Queensland, Australia',
+    image: 'https://images.unsplash.com/photo-1582967788606-a171c1080cb0?w=1200',
+    thumbnail: 'https://images.unsplash.com/photo-1582967788606-a171c1080cb0?w=400',
+    description: 'Dive into the world\'s largest coral reef system',
+    rating: 4.8,
+    views: '2.8M',
+    category: 'Underwater'
+  }
+];
 
 export default function VRPreview() {
-  const [activeTab, setActiveTab] = useState('hotel'); // 'hotel', 'attractions', 'neighborhood'
-  const [isNight, setIsNight] = useState(false);
+  const { tripId } = useParams();
+  const [selectedDestination, setSelectedDestination] = useState(VR_DESTINATIONS[0]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
+  const [favorites, setFavorites] = useState([]);
+  const [rotation, setRotation] = useState(0);
+  const [trip, setTrip] = useState(null);
 
-  // Background Images for different states
-  const backgrounds = {
-    hotel: isNight 
-      ? "https://images.unsplash.com/photo-1541123437860-d0963004a43b?q=80&w=2000&auto=format&fit=crop" // Night Room
-      : "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=2000&auto=format&fit=crop", // Day Room
-    neighborhood: "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2000&auto=format&fit=crop", // Map View (Placeholder)
-    attractions: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=2000&auto=format&fit=crop" // Eiffel Tower
+  useEffect(() => {
+    loadTripContext();
+  }, [tripId]);
+
+  useEffect(() => {
+    let interval;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setRotation(prev => (prev + 0.5) % 360);
+      }, 50);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
+  const loadTripContext = async () => {
+    if (tripId) {
+      try {
+        const res = await tripAPI.getTripContext(Number(tripId));
+        if (res.data.success) {
+          setTrip(res.data.data.trip);
+        }
+      } catch (e) {
+        console.log('Using demo mode');
+      }
+    }
+  };
+
+  const toggleFavorite = (id) => {
+    setFavorites(prev => 
+      prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]
+    );
+  };
+
+  const handleFullscreen = () => {
+    const viewer = document.getElementById('vr-viewer');
+    if (!document.fullscreenElement) {
+      viewer?.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  const navigateDestination = (direction) => {
+    const currentIndex = VR_DESTINATIONS.findIndex(d => d.id === selectedDestination.id);
+    let newIndex;
+    if (direction === 'next') {
+      newIndex = (currentIndex + 1) % VR_DESTINATIONS.length;
+    } else {
+      newIndex = (currentIndex - 1 + VR_DESTINATIONS.length) % VR_DESTINATIONS.length;
+    }
+    setSelectedDestination(VR_DESTINATIONS[newIndex]);
+    setRotation(0);
   };
 
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden bg-slate-900 text-white font-sans">
-      
-      {/* --- 1. IMMERSIVE BACKGROUND LAYER --- */}
-      <div className="absolute inset-0 z-0">
-        {/* The Image */}
-        <div 
-          className="w-full h-full bg-cover bg-center transition-all duration-700 ease-in-out transform scale-105"
-          style={{ backgroundImage: `url('${backgrounds[activeTab]}')` }}
-        ></div>
-        
-        {/* Gradient Overlays for Readability */}
-        <div className={`absolute inset-0 transition-opacity duration-700 pointer-events-none ${isNight ? 'bg-black/60' : 'bg-gradient-to-b from-black/40 via-transparent to-black/80'}`}></div>
-        
-        {/* Map Overlay Pattern (Only for Neighborhood tab) */}
-        {activeTab === 'neighborhood' && (
-           <div className="absolute inset-0 bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Paris_map_1860.jpg/1280px-Paris_map_1860.jpg')] bg-cover bg-center opacity-40 mix-blend-overlay"></div>
-        )}
+    <div className="max-w-7xl mx-auto space-y-6 pb-24">
+      {/* HEADER */}
+      <div className="flex items-center gap-4">
+        <Link to="/dashboard" className="p-3 hover:bg-slate-100 rounded-xl transition-colors">
+          <ArrowLeft className="w-5 h-5 text-slate-600" />
+        </Link>
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800">VR Destination Preview</h1>
+          <p className="text-slate-500 flex items-center gap-2 mt-1">
+            <Eye size={16} className="text-teal-500" />
+            Explore destinations before you travel
+          </p>
+        </div>
       </div>
 
-      {/* --- 2. INTERACTIVE HOTSPOTS (Only visible in Hotel Mode) --- */}
-      {activeTab === 'hotel' && (
-        <div className="absolute inset-0 z-10 pointer-events-none">
-          <Hotspot top="50%" left="25%" label="King Size Bed" />
-          <Hotspot top="40%" right="30%" label="Balcony View" />
-          <Hotspot bottom="30%" right="10%" label="Minibar" />
-        </div>
-      )}
-
-      {/* --- 3. UI OVERLAY LAYER --- */}
-      <div className="relative z-20 flex flex-col h-full pointer-events-none justify-between">
-        
-        {/* HEADER */}
-        <header className="flex items-center justify-between px-6 py-6 pointer-events-auto">
-          {/* Brand */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/20">
-              <Maximize size={20} className="text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight drop-shadow-md">TBO Experience</h1>
-              <p className="text-[10px] text-white/80 font-bold tracking-widest uppercase">VR Preview Mode</p>
-            </div>
-          </div>
-
-          {/* Top Right Controls */}
-          <div className="flex items-center gap-3">
-            {/* Day/Night Toggle */}
-            <div className="bg-slate-900/50 backdrop-blur-md border border-white/10 rounded-full p-1 flex items-center">
-              <button 
-                onClick={() => setIsNight(false)}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${!isNight ? 'bg-white/20 text-yellow-300 shadow-sm' : 'text-white/50 hover:text-white'}`}
-              >
-                <Sun size={16} />
-              </button>
-              <button 
-                onClick={() => setIsNight(true)}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${isNight ? 'bg-white/20 text-blue-300 shadow-sm' : 'text-white/50 hover:text-white'}`}
-              >
-                <Moon size={16} />
-              </button>
-            </div>
-
-            {/* Close Button */}
-            <Link to="/" className="w-10 h-10 bg-slate-900/50 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-all text-white">
-              <X size={20} />
-            </Link>
-          </div>
-        </header>
-
-        {/* MIDDLE INFO CARD (Hidden on mobile) */}
-        <div className="flex-1 flex items-center justify-end px-8 pointer-events-none">
-          <div className="pointer-events-auto hidden lg:block">
-            <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 p-5 rounded-2xl w-[280px] shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <h3 className="font-bold text-lg mb-1">{activeTab === 'neighborhood' ? 'Paris 7th Arr.' : 'Parisian Suite'}</h3>
-              <p className="text-xs text-gray-300 mb-4 leading-relaxed">
-                {activeTab === 'neighborhood' 
-                  ? 'Explore the vibrant streets, cafes, and landmarks surrounding your stay.'
-                  : 'Experience luxury with a direct view of the Eiffel Tower from your balcony.'}
-              </p>
-              
-              <div className="space-y-3">
-                <InfoRow icon={CloudSun} color="text-yellow-400" label="Weather" value="22°C Sunny" />
-                <InfoRow icon={Users} color="text-green-400" label="Crowd Level" value="Low" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* BOTTOM CONTROLS BAR */}
-        <div className="pointer-events-auto pb-8 pt-4 px-6 w-full flex flex-col md:flex-row items-end md:items-center justify-between gap-6">
-          
-          {/* Left: Navigation Tabs */}
-          <div className="flex flex-col gap-4 w-full md:w-auto">
-            {/* Mobile Stats (Only visible on small screens) */}
-            <div className="lg:hidden flex items-center justify-between bg-slate-900/60 backdrop-blur-md border border-white/10 p-3 rounded-xl mb-2">
-              <div className="flex items-center gap-2">
-                <CloudSun size={16} className="text-yellow-400" />
-                <span className="text-sm font-bold">22°C</span>
-              </div>
-              <div className="w-px h-4 bg-white/20"></div>
-              <div className="flex items-center gap-2">
-                <Users size={16} className="text-green-400" />
-                <span className="text-sm font-bold">Low Crowd</span>
-              </div>
-            </div>
-
-            {/* The Tabs */}
-            <div className="bg-slate-900/70 backdrop-blur-xl border border-white/10 rounded-xl p-1.5 flex gap-1 w-full md:w-auto overflow-x-auto">
-              <TabButton 
-                active={activeTab === 'hotel'} 
-                onClick={() => setActiveTab('hotel')} 
-                icon={Bed} 
-                label="Hotel Room" 
-              />
-              <TabButton 
-                active={activeTab === 'attractions'} 
-                onClick={() => setActiveTab('attractions')} 
-                icon={Camera} 
-                label="Attractions" 
-              />
-              <TabButton 
-                active={activeTab === 'neighborhood'} 
-                onClick={() => setActiveTab('neighborhood')} 
-                icon={Map} 
-                label="Neighborhood" 
+      {/* MAIN VR VIEWER */}
+      <div className="grid lg:grid-cols-4 gap-6">
+        {/* VIEWER */}
+        <div className="lg:col-span-3 space-y-4">
+          <div 
+            id="vr-viewer"
+            className="relative bg-slate-900 rounded-3xl overflow-hidden aspect-video group"
+          >
+            {/* MAIN IMAGE WITH SIMULATED 360 EFFECT */}
+            <div 
+              className="absolute inset-0 transition-transform duration-100"
+              style={{ 
+                transform: `translateX(${-rotation * 2}px)`,
+                width: '200%'
+              }}
+            >
+              <img 
+                src={selectedDestination.image}
+                alt={selectedDestination.name}
+                className="w-full h-full object-cover"
               />
             </div>
-          </div>
 
-          {/* Center: Zoom Controls (Hidden on mobile) */}
-          <div className="hidden md:flex bg-slate-900/70 backdrop-blur-xl border border-white/10 rounded-full p-2 items-center gap-2 absolute left-1/2 -translate-x-1/2 bottom-8">
-            <IconButton icon={Minus} />
-            <div className="w-px h-4 bg-white/20"></div>
-            <IconButton icon={RotateCcw} />
-            <IconButton icon={RotateCw} />
-            <div className="w-px h-4 bg-white/20"></div>
-            <IconButton icon={Plus} />
-          </div>
+            {/* OVERLAY GRADIENT */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
 
-          {/* Right: Price & CTA */}
-          <div className="w-full md:w-auto">
-            <div className="bg-slate-900/70 backdrop-blur-xl border border-white/10 p-4 rounded-xl flex items-center justify-between gap-6 md:min-w-[320px]">
-              <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Price</span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-bold text-white">$450</span>
-                  <span className="text-xs text-gray-400">/night</span>
+            {/* VR INDICATOR */}
+            <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-2 bg-black/50 backdrop-blur-sm rounded-full">
+              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              <span className="text-white text-sm font-medium">360° VR</span>
+            </div>
+
+            {/* DESTINATION INFO */}
+            <div className="absolute bottom-0 left-0 right-0 p-6">
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="px-2 py-1 bg-teal-500/90 text-white text-xs font-medium rounded-full">
+                      {selectedDestination.category}
+                    </span>
+                    <span className="flex items-center gap-1 px-2 py-1 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full">
+                      <Star size={12} className="fill-yellow-400 text-yellow-400" />
+                      {selectedDestination.rating}
+                    </span>
+                  </div>
+                  <h2 className="text-3xl font-bold text-white mb-1">{selectedDestination.name}</h2>
+                  <p className="text-white/80 flex items-center gap-2">
+                    <MapPin size={16} />
+                    {selectedDestination.location}
+                  </p>
+                </div>
+
+                {/* ACTION BUTTONS */}
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => toggleFavorite(selectedDestination.id)}
+                    className={`p-3 rounded-full backdrop-blur-sm transition-colors ${
+                      favorites.includes(selectedDestination.id) 
+                        ? 'bg-red-500 text-white' 
+                        : 'bg-white/20 text-white hover:bg-white/30'
+                    }`}
+                  >
+                    <Heart size={20} className={favorites.includes(selectedDestination.id) ? 'fill-current' : ''} />
+                  </button>
+                  <button className="p-3 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors">
+                    <Share2 size={20} />
+                  </button>
                 </div>
               </div>
-              <button className="bg-white text-brand-blue hover:bg-gray-100 transition-colors px-5 py-3 rounded-lg font-bold text-sm flex items-center gap-2 shadow-lg shadow-white/10">
-                <span>Book Now</span>
-                <ArrowRight size={16} />
+            </div>
+
+            {/* NAVIGATION ARROWS */}
+            <button 
+              onClick={() => navigateDestination('prev')}
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-all opacity-0 group-hover:opacity-100"
+            >
+              <ChevronLeft size={24} />
+            </button>
+            <button 
+              onClick={() => navigateDestination('next')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-all opacity-0 group-hover:opacity-100"
+            >
+              <ChevronRight size={24} />
+            </button>
+          </div>
+
+          {/* CONTROLS */}
+          <div className="flex items-center justify-between bg-white rounded-2xl border border-slate-200 p-4">
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsPlaying(!isPlaying)}
+                className={`p-3 rounded-xl transition-colors ${
+                  isPlaying ? 'bg-teal-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+              </button>
+              <button 
+                onClick={() => setIsMuted(!isMuted)}
+                className="p-3 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors"
+              >
+                {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+              </button>
+              <button 
+                onClick={() => setRotation(0)}
+                className="p-3 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors"
+              >
+                <RotateCcw size={20} />
+              </button>
+            </div>
+
+            <div className="hidden md:flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-slate-500">
+                <Eye size={16} />
+                {selectedDestination.views} views
+              </div>
+              <button 
+                onClick={() => setShowInfo(!showInfo)}
+                className={`p-3 rounded-xl transition-colors ${
+                  showInfo ? 'bg-teal-500 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <Info size={20} />
+              </button>
+              <button 
+                onClick={handleFullscreen}
+                className="p-3 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-colors"
+              >
+                <Maximize2 size={20} />
               </button>
             </div>
           </div>
 
+          {/* INFO PANEL */}
+          {showInfo && (
+            <div className="bg-gradient-to-r from-teal-50 to-cyan-50 rounded-2xl border border-teal-100 p-6">
+              <h3 className="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <Sparkles className="text-teal-500" size={20} />
+                About This Location
+              </h3>
+              <p className="text-slate-600 mb-4">{selectedDestination.description}</p>
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <Clock size={16} className="text-slate-400" />
+                  <span className="text-slate-600">Best time: Early morning or sunset</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Camera size={16} className="text-slate-400" />
+                  <span className="text-slate-600">Great for photography</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* THUMBNAIL GALLERY */}
+        <div className="lg:col-span-1 space-y-4">
+          <h3 className="font-bold text-slate-800">Explore More</h3>
+          <div className="grid grid-cols-2 lg:grid-cols-1 gap-3">
+            {VR_DESTINATIONS.map(dest => (
+              <button
+                key={dest.id}
+                onClick={() => {
+                  setSelectedDestination(dest);
+                  setRotation(0);
+                }}
+                className={`relative rounded-2xl overflow-hidden group transition-all ${
+                  selectedDestination.id === dest.id 
+                    ? 'ring-2 ring-teal-500 ring-offset-2' 
+                    : 'hover:ring-2 hover:ring-slate-200 hover:ring-offset-2'
+                }`}
+              >
+                <img 
+                  src={dest.thumbnail}
+                  alt={dest.name}
+                  className="w-full aspect-video object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <p className="text-white font-semibold text-sm truncate">{dest.name}</p>
+                  <p className="text-white/70 text-xs truncate">{dest.location}</p>
+                </div>
+                {selectedDestination.id === dest.id && (
+                  <div className="absolute top-2 right-2 w-3 h-3 bg-teal-500 rounded-full" />
+                )}
+                {favorites.includes(dest.id) && (
+                  <Heart size={14} className="absolute top-2 left-2 text-red-500 fill-red-500" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* FEATURES SECTION */}
+      <div className="bg-white rounded-3xl border border-slate-200 p-8">
+        <h3 className="text-xl font-bold text-slate-800 mb-6 text-center">Experience Before You Travel</h3>
+        <div className="grid md:grid-cols-3 gap-6">
+          <FeatureCard
+            icon={Eye}
+            title="360° Virtual Tours"
+            description="Explore destinations from every angle with immersive 360-degree views"
+          />
+          <FeatureCard
+            icon={Camera}
+            title="High-Resolution Imagery"
+            description="Crystal clear photos and videos to help you plan your perfect trip"
+          />
+          <FeatureCard
+            icon={Sparkles}
+            title="AI Recommendations"
+            description="Get personalized destination suggestions based on your preferences"
+          />
         </div>
       </div>
     </div>
   );
 }
 
-// --- SUB-COMPONENTS ---
-
-function Hotspot({ top, left, right, bottom, label }) {
+function FeatureCard({ icon: Icon, title, description }) {
   return (
-    <button 
-      className="absolute group pointer-events-auto"
-      style={{ top, left, right, bottom }}
-    >
-      <div className="relative flex items-center justify-center w-8 h-8">
-        <span className="absolute w-full h-full bg-white rounded-full opacity-30 animate-ping"></span>
-        <div className="relative w-3 h-3 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
+    <div className="text-center p-6 rounded-2xl bg-slate-50">
+      <div className="w-14 h-14 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <Icon className="w-7 h-7 text-teal-600" />
       </div>
-      
-      {/* Tooltip */}
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 pointer-events-none">
-        <div className="bg-slate-900/80 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-white/10 whitespace-nowrap shadow-xl">
-          {label}
-        </div>
-        {/* Arrow */}
-        <div className="w-2 h-2 bg-slate-900/80 border-r border-b border-white/10 rotate-45 absolute left-1/2 -translate-x-1/2 -bottom-1"></div>
-      </div>
-    </button>
-  );
-}
-
-function TabButton({ active, onClick, icon: Icon, label }) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`flex-1 md:flex-none flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-        active 
-          ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/25' 
-          : 'hover:bg-white/10 text-gray-400 hover:text-white'
-      }`}
-    >
-      <Icon size={16} />
-      <span>{label}</span>
-    </button>
-  );
-}
-
-function IconButton({ icon: Icon }) {
-  return (
-    <button className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center text-white/80 hover:text-white transition-colors">
-      <Icon size={18} />
-    </button>
-  );
-}
-
-function InfoRow({ icon: Icon, color, label, value }) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="p-2 bg-white/5 rounded-lg border border-white/5">
-        <Icon size={18} className={color} />
-      </div>
-      <div>
-        <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">{label}</p>
-        <p className="text-sm font-bold text-white">{value}</p>
-      </div>
+      <h4 className="font-bold text-slate-800 mb-2">{title}</h4>
+      <p className="text-sm text-slate-500">{description}</p>
     </div>
   );
 }
