@@ -111,7 +111,7 @@ export default function TripSummary() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-teal-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-rose-500"></div>
       </div>
     );
   }
@@ -120,31 +120,31 @@ export default function TripSummary() {
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link to="/dashboard" className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-          <ArrowLeft className="w-5 h-5 text-slate-600" />
+        <Link to="/dashboard" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Trip Summary</h1>
-          <p className="text-slate-600">Relive your memories</p>
+          <h1 className="text-2xl font-bold text-gray-800">Trip Summary</h1>
+          <p className="text-gray-600">Relive your memories</p>
         </div>
       </div>
 
       {/* Trip Overview Card */}
-      <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl p-8 text-white relative overflow-hidden">
+      <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl p-8 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
         <div className="relative">
-          <div className="flex items-center gap-2 text-teal-100 mb-2">
+          <div className="flex items-center gap-2 text-rose-100 mb-2">
             <CheckCircle className="w-5 h-5" />
             <span className="font-medium">Trip Completed</span>
           </div>
           <h2 className="text-3xl font-bold mb-4">{trip?.destination}</h2>
           <div className="flex flex-wrap gap-6">
             <div className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-teal-200" />
+              <Calendar className="w-5 h-5 text-rose-200" />
               <span>{formatDate(trip?.start_date)} - {formatDate(trip?.end_date)}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Plane className="w-5 h-5 text-teal-200" />
+              <Plane className="w-5 h-5 text-rose-200" />
               <span>{trip?.start_date && trip?.end_date 
                 ? Math.ceil((new Date(trip.end_date) - new Date(trip.start_date)) / (1000 * 60 * 60 * 24))
                 : 0} days adventure</span>
@@ -197,17 +197,17 @@ export default function TripSummary() {
             {/* Stats */}
             {aiSummary.stats && (
               <div className="grid grid-cols-3 gap-4">
-                <div className="bg-slate-50 rounded-xl p-4 text-center">
-                  <p className="text-2xl font-bold text-teal-600">{aiSummary.stats.days}</p>
-                  <p className="text-sm text-slate-500">Days</p>
+                <div className="bg-gray-50 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-rose-500">{aiSummary.stats.days}</p>
+                  <p className="text-sm text-gray-500">Days</p>
                 </div>
-                <div className="bg-slate-50 rounded-xl p-4 text-center">
-                  <p className="text-2xl font-bold text-teal-600">{aiSummary.stats.activities}</p>
-                  <p className="text-sm text-slate-500">Activities</p>
+                <div className="bg-gray-50 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-rose-500">{aiSummary.stats.activities}</p>
+                  <p className="text-sm text-gray-500">Activities</p>
                 </div>
-                <div className="bg-slate-50 rounded-xl p-4 text-center">
-                  <p className="text-2xl font-bold text-teal-600">{aiSummary.stats.memories}</p>
-                  <p className="text-sm text-slate-500">Memories</p>
+                <div className="bg-gray-50 rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-rose-500">{aiSummary.stats.memories}</p>
+                  <p className="text-sm text-gray-500">Memories</p>
                 </div>
               </div>
             )}
@@ -215,13 +215,13 @@ export default function TripSummary() {
             {/* Highlights */}
             {aiSummary.highlights?.length > 0 && (
               <div>
-                <h5 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <Heart className="w-4 h-4 text-red-500" /> Trip Highlights
                 </h5>
                 <ul className="space-y-2">
                   {aiSummary.highlights.map((highlight, idx) => (
-                    <li key={idx} className="flex items-start gap-3 text-slate-600">
-                      <CheckCircle className="w-4 h-4 text-teal-500 mt-1 flex-shrink-0" />
+                    <li key={idx} className="flex items-start gap-3 text-gray-600">
+                      <CheckCircle className="w-4 h-4 text-rose-500 mt-1 flex-shrink-0" />
                       {highlight}
                     </li>
                   ))}
@@ -232,7 +232,7 @@ export default function TripSummary() {
             {/* Places Visited */}
             {aiSummary.places_visited?.length > 0 && (
               <div>
-                <h5 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-blue-500" /> Places Visited
                 </h5>
                 <div className="flex flex-wrap gap-2">
@@ -270,28 +270,28 @@ export default function TripSummary() {
 
       {/* Memories Timeline */}
       {memories.length > 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-            <Camera className="w-5 h-5 text-teal-500" /> Your Memories
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <Camera className="w-5 h-5 text-rose-500" /> Your Memories
           </h3>
           <div className="space-y-4">
             {memories.map((memory, idx) => (
-              <div key={memory.id || idx} className="flex gap-4 p-4 bg-slate-50 rounded-xl">
-                <div className="w-12 h-12 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div key={memory.id || idx} className="flex gap-4 p-4 bg-gray-50 rounded-xl">
+                <div className="w-12 h-12 bg-rose-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   {memory.type === 'photo' ? (
-                    <Camera className="w-6 h-6 text-teal-600" />
+                    <Camera className="w-6 h-6 text-rose-600" />
                   ) : memory.type === 'place_visited' ? (
-                    <MapPin className="w-6 h-6 text-teal-600" />
+                    <MapPin className="w-6 h-6 text-rose-600" />
                   ) : (
-                    <MessageSquare className="w-6 h-6 text-teal-600" />
+                    <MessageSquare className="w-6 h-6 text-rose-600" />
                   )}
                 </div>
                 <div>
-                  <p className="font-medium text-slate-800">{memory.title}</p>
+                  <p className="font-medium text-gray-800">{memory.title}</p>
                   {memory.description && (
-                    <p className="text-sm text-slate-600 mt-1">{memory.description}</p>
+                    <p className="text-sm text-gray-600 mt-1">{memory.description}</p>
                   )}
-                  <p className="text-xs text-slate-400 mt-2">
+                  <p className="text-xs text-gray-400 mt-2">
                     {new Date(memory.created_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -302,13 +302,13 @@ export default function TripSummary() {
       )}
 
       {/* Feedback Section */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
             <Star className="w-5 h-5 text-yellow-500" /> Rate Your Trip
           </h3>
           {feedback && !showFeedbackForm && (
-            <span className="text-sm text-teal-600 font-medium">Thanks for your feedback!</span>
+            <span className="text-sm text-rose-500 font-medium">Thanks for your feedback!</span>
           )}
         </div>
 
@@ -316,15 +316,15 @@ export default function TripSummary() {
           <div className="bg-yellow-50 rounded-xl p-4">
             <div className="flex items-center gap-1 mb-2">
               {[...Array(5)].map((_, i) => (
-                <Star key={i} className={`w-5 h-5 ${i < feedback.rating ? 'text-yellow-500 fill-yellow-500' : 'text-slate-300'}`} />
+                <Star key={i} className={`w-5 h-5 ${i < feedback.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} />
               ))}
             </div>
-            <p className="text-sm text-slate-600">{feedback.improvements || 'No additional comments'}</p>
+            <p className="text-sm text-gray-600">{feedback.improvements || 'No additional comments'}</p>
           </div>
         ) : showFeedbackForm ? (
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">How was your trip?</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">How was your trip?</label>
               <div className="flex items-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -332,30 +332,30 @@ export default function TripSummary() {
                     onClick={() => setFeedbackData(p => ({ ...p, rating: star }))}
                     className="p-1"
                   >
-                    <Star className={`w-8 h-8 ${star <= feedbackData.rating ? 'text-yellow-500 fill-yellow-500' : 'text-slate-300'}`} />
+                    <Star className={`w-8 h-8 ${star <= feedbackData.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} />
                   </button>
                 ))}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Any suggestions for improvement?</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Any suggestions for improvement?</label>
               <textarea
                 value={feedbackData.improvements}
                 onChange={(e) => setFeedbackData(p => ({ ...p, improvements: e.target.value }))}
                 placeholder="Share your thoughts..."
-                className="w-full p-3 border border-slate-200 rounded-xl resize-none h-24 focus:outline-none focus:border-teal-500"
+                className="w-full p-3 border border-gray-200 rounded-xl resize-none h-24 focus:outline-none focus:border-rose-500"
               />
             </div>
             <div className="flex gap-3">
               <button
                 onClick={submitFeedback}
-                className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+                className="bg-rose-500 hover:bg-rose-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
               >
                 <Send className="w-4 h-4" /> Submit Feedback
               </button>
               <button
                 onClick={() => setShowFeedbackForm(false)}
-                className="text-slate-600 hover:text-slate-800 px-4 py-2"
+                className="text-gray-600 hover:text-gray-800 px-4 py-2"
               >
                 Cancel
               </button>
@@ -364,7 +364,7 @@ export default function TripSummary() {
         ) : (
           <button
             onClick={() => setShowFeedbackForm(true)}
-            className="w-full p-4 border-2 border-dashed border-slate-200 rounded-xl text-slate-600 hover:border-teal-300 hover:text-teal-600 transition-colors flex items-center justify-center gap-2"
+            className="w-full p-4 border-2 border-dashed border-gray-200 rounded-xl text-gray-600 hover:border-rose-300 hover:text-rose-500 transition-colors flex items-center justify-center gap-2"
           >
             <ThumbsUp className="w-5 h-5" /> Share your experience
           </button>

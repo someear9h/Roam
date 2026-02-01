@@ -124,7 +124,7 @@ export default function Emergency() {
                 href={`https://maps.google.com/?q=${location.lat},${location.lng}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-teal-600 font-semibold hover:underline mb-6"
+                className="inline-flex items-center gap-2 text-rose-500 font-semibold hover:underline mb-6"
               >
                 <ExternalLink size={18} />
                 View on Google Maps
@@ -132,7 +132,7 @@ export default function Emergency() {
             )}
             <button
               onClick={() => setShowShareModal(false)}
-              className="w-full py-4 bg-slate-100 text-slate-700 font-semibold rounded-2xl hover:bg-slate-200 transition-colors"
+              className="w-full py-4 bg-gray-100 text-gray-700 font-semibold rounded-2xl hover:bg-gray-200 transition-colors"
             >
               Close
             </button>
@@ -150,13 +150,13 @@ export default function Emergency() {
             </span>
             <span className="text-red-600 font-bold text-sm uppercase tracking-wider">Emergency Mode</span>
           </div>
-          <h1 className="text-4xl font-bold text-slate-900">Emergency Assistance</h1>
-          <div className="flex items-center gap-2 mt-2 text-slate-500">
-            <MapPin size={18} className="text-slate-400" />
+          <h1 className="text-4xl font-bold text-gray-900">Emergency Assistance</h1>
+          <div className="flex items-center gap-2 mt-2 text-gray-500">
+            <MapPin size={18} className="text-gray-400" />
             <span>
               {location.city}{location.country ? `, ${location.country}` : ''}
             </span>
-            <button onClick={detectLocation} className="text-teal-600 text-sm font-semibold hover:underline">
+            <button onClick={detectLocation} className="text-rose-500 text-sm font-semibold hover:underline">
               Refresh
             </button>
           </div>
@@ -183,15 +183,15 @@ export default function Emergency() {
 
         {/* SHARE LOCATION */}
         <div className={`rounded-3xl p-8 border-2 transition-all ${
-          isSharing ? 'bg-green-50 border-green-300' : 'bg-white border-slate-200'
+          isSharing ? 'bg-green-50 border-green-300' : 'bg-white border-gray-200'
         }`}>
           <div className="flex items-center gap-4 mb-6">
-            <div className={`p-4 rounded-2xl ${isSharing ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-600'}`}>
+            <div className={`p-4 rounded-2xl ${isSharing ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-600'}`}>
               <Share2 size={28} />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-800">Share Live Location</h3>
-              <p className="text-slate-500 text-sm">
+              <h3 className="text-xl font-bold text-gray-800">Share Live Location</h3>
+              <p className="text-gray-500 text-sm">
                 {isSharing ? 'Broadcasting your location...' : 'Send your GPS coordinates to emergency contacts'}
               </p>
             </div>
@@ -202,7 +202,7 @@ export default function Emergency() {
             className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
               isSharing 
                 ? 'bg-green-500 text-white hover:bg-green-600' 
-                : 'bg-gradient-to-r from-teal-500 to-teal-600 text-white hover:from-teal-600 hover:to-teal-700'
+                : 'bg-gradient-to-r from-rose-500 to-rose-600 text-white hover:from-rose-600 hover:to-rose-700'
             }`}
           >
             {isSharing ? (

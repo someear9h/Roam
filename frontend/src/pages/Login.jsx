@@ -238,7 +238,7 @@ export default function Login() {
                   setIsSignUp(!isSignUp);
                   setError('');
                 }}
-                className="text-roam-teal font-bold hover:text-teal-700 hover:underline transition-colors ml-1"
+                className="text-roam-teal font-bold hover:text-rose-700 hover:underline transition-colors ml-1"
               >
                 {isSignUp ? 'Sign In' : 'Sign Up'}
               </button>

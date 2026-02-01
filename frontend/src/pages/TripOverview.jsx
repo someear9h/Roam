@@ -44,10 +44,10 @@ export default function TripOverview() {
         <div className="lg:col-span-8 space-y-8">
           
           {/* 2. JOURNEY TIMELINE (Stepper) */}
-          <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100">
+          <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Map className="text-teal-600" size={20} />
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Map className="text-rose-500" size={20} />
                 Journey Timeline
               </h3>
               <span className="text-xs font-bold bg-green-100 text-green-700 px-3 py-1 rounded-full">On Schedule</span>
@@ -55,41 +55,41 @@ export default function TripOverview() {
             
             <div className="relative px-4">
               {/* Connecting Line */}
-              <div className="absolute top-5 left-0 w-full h-1 bg-slate-100 rounded-full"></div>
-              <div className="absolute top-5 left-0 w-1/2 h-1 bg-teal-600 rounded-full transition-all duration-1000"></div>
+              <div className="absolute top-5 left-0 w-full h-1 bg-gray-100 rounded-full"></div>
+              <div className="absolute top-5 left-0 w-1/2 h-1 bg-rose-500 rounded-full transition-all duration-1000"></div>
               
               <div className="relative z-10 flex justify-between w-full">
                 {/* Step 1: Done */}
                 <div className="flex flex-col items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-teal-600 text-white flex items-center justify-center shadow-md ring-4 ring-white">
+                  <div className="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-md ring-4 ring-white">
                     <Check size={20} />
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-bold text-slate-900">Preparation</p>
-                    <p className="text-xs text-slate-400">Completed</p>
+                    <p className="text-sm font-bold text-gray-900">Preparation</p>
+                    <p className="text-xs text-gray-400">Completed</p>
                   </div>
                 </div>
                 
                 {/* Step 2: Active */}
                 <div className="flex flex-col items-center gap-3">
-                  <div className="relative w-12 h-12 rounded-full bg-teal-600 text-white flex items-center justify-center shadow-lg ring-4 ring-white">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-600 opacity-20"></span>
+                  <div className="relative w-12 h-12 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg ring-4 ring-white">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-20"></span>
                     <Plane size={24} />
                   </div>
                   <div className="text-center">
-                    <p className="text-base font-bold text-teal-600">Travel Day</p>
-                    <p className="text-xs font-medium text-teal-600">Active Now</p>
+                    <p className="text-base font-bold text-rose-500">Travel Day</p>
+                    <p className="text-xs font-medium text-rose-500">Active Now</p>
                   </div>
                 </div>
                 
                 {/* Step 3: Upcoming */}
                 <div className="flex flex-col items-center gap-3 opacity-60">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 border-2 border-slate-300 text-slate-400 flex items-center justify-center shadow-sm ring-4 ring-white">
+                  <div className="w-10 h-10 rounded-full bg-gray-100 border-2 border-gray-300 text-gray-400 flex items-center justify-center shadow-sm ring-4 ring-white">
                     <MapPin size={20} />
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-bold text-slate-900">Destination</p>
-                    <p className="text-xs text-slate-400">Upcoming</p>
+                    <p className="text-sm font-bold text-gray-900">Destination</p>
+                    <p className="text-xs text-gray-400">Upcoming</p>
                   </div>
                 </div>
               </div>

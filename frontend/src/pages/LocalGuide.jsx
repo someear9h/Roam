@@ -3,16 +3,18 @@ import {
   Search, MapPin, Coffee, Utensils, AlertTriangle, Navigation, 
   Loader2, Send, Star, Clock, DollarSign, Languages, BookOpen,
   Compass, Heart, Camera, ShoppingBag, Music, TreePine, Landmark,
-  Users, ThumbsUp, ExternalLink, ChevronRight, Sparkles, Globe
+  Users, ThumbsUp, ExternalLink, ChevronRight, Sparkles, Globe,
+  ArrowLeft
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { aiAPI, tripAPI } from '../services/api';
 
 const CATEGORIES = [
-  { id: 'food', label: 'Food & Dining', icon: Utensils, color: 'orange' },
+  { id: 'food', label: 'Food & Dining', icon: Utensils, color: 'rose' },
   { id: 'attractions', label: 'Attractions', icon: Landmark, color: 'blue' },
-  { id: 'culture', label: 'Culture & Customs', icon: BookOpen, color: 'purple' },
-  { id: 'phrases', label: 'Local Phrases', icon: Languages, color: 'teal' },
-  { id: 'safety', label: 'Safety Tips', icon: AlertTriangle, color: 'red' },
+  { id: 'culture', label: 'Culture', icon: BookOpen, color: 'violet' },
+  { id: 'phrases', label: 'Phrases', icon: Languages, color: 'cyan' },
+  { id: 'safety', label: 'Safety', icon: AlertTriangle, color: 'amber' },
   { id: 'shopping', label: 'Shopping', icon: ShoppingBag, color: 'pink' },
 ];
 
@@ -111,22 +113,20 @@ export default function LocalGuide() {
   const destination = currentTrip?.destination || 'your destination';
 
   return (
-    <div className="space-y-8 pb-24">
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+    <div className="space-y-6 pb-24">
+      {/* HEADER - Airbnb Style */}
+      <div className="flex items-center gap-4 mb-2">
+        <Link to="/dashboard" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <ArrowLeft size={20} className="text-gray-600" />
+        </Link>
         <div>
-          <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
-            <a href="/dashboard" className="hover:text-teal-600">Dashboard</a>
-            <ChevronRight size={14} />
-            <span className="font-semibold text-slate-800">Local Guide</span>
-          </div>
-          <h1 className="text-4xl font-bold text-slate-900">Local Guide</h1>
-          <p className="text-slate-500 mt-1 flex items-center gap-2">
-            <MapPin size={16} className="text-teal-500" />
+          <h1 className="text-2xl font-bold text-gray-900">Local Guide</h1>
+          <p className="text-gray-500 mt-0.5 flex items-center gap-2 text-sm">
+            <MapPin size={14} className="text-rose-500" />
             {destination}
             {userLocation.lat && (
-              <span className="flex items-center gap-1 text-green-600 text-sm">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              <span className="flex items-center gap-1 text-green-600 text-xs bg-green-50 px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
                 GPS Active
               </span>
             )}
@@ -134,41 +134,40 @@ export default function LocalGuide() {
         </div>
       </div>
 
-      {/* HERO SEARCH */}
-      <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-8 md:p-12 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-20"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/80 to-transparent"></div>
+      {/* HERO SEARCH - Airbnb Style */}
+      <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 md:p-10 overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-30"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/80 to-transparent"></div>
         
         <div className="relative z-10 max-w-2xl">
-          <div className="flex items-center gap-2 text-teal-400 mb-4">
-            <Sparkles size={20} />
-            <span className="font-semibold">AI-Powered Local Insights</span>
+          <div className="flex items-center gap-2 text-rose-400 mb-3">
+            <Sparkles size={18} />
+            <span className="font-semibold text-sm">AI-Powered Insights</span>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Discover {destination} Like a Local
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-3">
+            Discover {destination}
           </h2>
-          <p className="text-slate-300 mb-8">
-            Ask anything about local food, customs, hidden gems, safety tips, and more. 
-            Get personalized recommendations powered by AI.
+          <p className="text-gray-300 mb-6 text-sm md:text-base">
+            Ask anything about local food, customs, hidden gems, and more.
           </p>
           
           {/* Search Box */}
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && askLocalGuide()}
                 placeholder="Ask anything... e.g., 'Best street food spots?'"
-                className="w-full pl-12 pr-4 py-4 rounded-2xl border-0 focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-700 placeholder-slate-400"
+                className="w-full pl-12 pr-4 py-4 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-rose-500 text-gray-700 placeholder-gray-400"
               />
             </div>
             <button 
               onClick={() => askLocalGuide()}
               disabled={isLoading || !query.trim()}
-              className="px-8 py-4 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-bold rounded-2xl hover:from-teal-600 hover:to-teal-700 disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-teal-500/25"
+              className="px-6 py-4 bg-rose-500 text-white font-bold rounded-xl hover:bg-rose-600 disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg"
             >
               {isLoading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
               <span className="hidden md:inline">Ask</span>
@@ -177,15 +176,15 @@ export default function LocalGuide() {
         </div>
       </div>
 
-      {/* CATEGORIES */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* CATEGORIES - Airbnb Style Pills */}
+      <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
         {CATEGORIES.map((cat) => {
           const colorClasses = {
-            orange: 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100',
+            rose: 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100',
             blue: 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100',
-            purple: 'bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100',
-            teal: 'bg-teal-50 text-teal-600 border-teal-200 hover:bg-teal-100',
-            red: 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100',
+            violet: 'bg-violet-50 text-violet-600 border-violet-200 hover:bg-violet-100',
+            cyan: 'bg-cyan-50 text-cyan-600 border-cyan-200 hover:bg-cyan-100',
+            amber: 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100',
             pink: 'bg-pink-50 text-pink-600 border-pink-200 hover:bg-pink-100',
           };
           const isActive = activeCategory === cat.id;
@@ -194,71 +193,71 @@ export default function LocalGuide() {
             <button
               key={cat.id}
               onClick={() => handleCategoryClick(cat)}
-              className={`p-4 rounded-2xl border-2 transition-all ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-full border-2 transition-all whitespace-nowrap ${
                 isActive 
-                  ? `${colorClasses[cat.color]} border-current` 
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                  ? `${colorClasses[cat.color]} border-current font-semibold` 
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
               }`}
             >
-              <cat.icon size={24} className="mx-auto mb-2" />
-              <p className="text-sm font-semibold">{cat.label}</p>
+              <cat.icon size={18} />
+              <span className="text-sm">{cat.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* AI RESPONSE */}
+      {/* AI RESPONSE - Clean Card */}
       {aiResponse && (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-4 flex items-center gap-3">
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-rose-500 px-6 py-4 flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-xl">
-              <Compass size={24} className="text-white" />
+              <Compass size={22} className="text-white" />
             </div>
             <div>
               <h3 className="font-bold text-white">AI Local Guide</h3>
-              <p className="text-sm text-teal-100">Personalized recommendations for {destination}</p>
+              <p className="text-sm text-rose-100">Recommendations for {destination}</p>
             </div>
           </div>
-          <div className="p-6 md:p-8">
-            <div className="prose prose-slate max-w-none">
-              <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
+          <div className="p-6">
+            <div className="prose prose-gray max-w-none">
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* QUICK QUERIES */}
+      {/* QUICK QUERIES - Airbnb Style Cards */}
       <div>
-        <h3 className="text-xl font-bold text-slate-800 mb-4">Popular Questions</h3>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">Popular Questions</h3>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {QUICK_QUERIES.map((item, idx) => (
             <button
               key={idx}
               onClick={() => askLocalGuide(item.query)}
-              className="flex items-start gap-4 p-5 bg-white rounded-2xl border border-slate-200 hover:border-teal-300 hover:shadow-md transition-all text-left group"
+              className="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-rose-300 hover:shadow-md transition-all text-left group"
             >
-              <div className="p-3 bg-teal-50 rounded-xl text-teal-600 group-hover:bg-teal-100 transition-colors">
-                <item.icon size={22} />
+              <div className="p-3 bg-rose-50 rounded-xl text-rose-500 group-hover:bg-rose-100 transition-colors">
+                <item.icon size={20} />
               </div>
-              <div>
-                <h4 className="font-semibold text-slate-800 group-hover:text-teal-600 transition-colors">
+              <div className="flex-1">
+                <h4 className="font-semibold text-gray-900 group-hover:text-rose-600 transition-colors">
                   {item.label}
                 </h4>
-                <p className="text-sm text-slate-500 mt-1 line-clamp-2">{item.query}</p>
+                <p className="text-sm text-gray-500 mt-1 line-clamp-2">{item.query}</p>
               </div>
             </button>
           ))}
         </div>
       </div>
 
-      {/* CULTURAL INSIGHTS CARDS */}
+      {/* CULTURAL INSIGHTS - Clean Cards */}
       <div>
-        <h3 className="text-xl font-bold text-slate-800 mb-4">Essential Knowledge</h3>
-        <div className="grid md:grid-cols-3 gap-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">Essential Knowledge</h3>
+        <div className="grid md:grid-cols-3 gap-4">
           <InsightCard 
             title="Language Basics"
             icon={Languages}
-            color="teal"
+            color="cyan"
             items={['Hello - Bonjour (bon-ZHOOR)', 'Thank you - Merci (mehr-SEE)', 'Please - S\'il vous plaît', 'Excuse me - Pardon']}
             onAsk={() => askLocalGuide('Teach me essential local phrases with pronunciation')}
           />
@@ -272,7 +271,7 @@ export default function LocalGuide() {
           <InsightCard 
             title="Cultural Tips"
             icon={Heart}
-            color="red"
+            color="rose"
             items={['Greet with \"Bonjour\" when entering shops', 'Dress modestly for religious sites', 'Lunch is 12-2pm, dinner after 7pm', 'Keep voice low on public transport']}
             onAsk={() => askLocalGuide('What cultural etiquette should I follow?')}
           />
@@ -281,10 +280,10 @@ export default function LocalGuide() {
 
       {/* LOADING OVERLAY */}
       {isLoading && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-8 shadow-xl text-center">
-            <div className="w-16 h-16 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-slate-600 font-medium">Getting local insights...</p>
+            <div className="w-12 h-12 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">Getting local insights...</p>
           </div>
         </div>
       )}
@@ -294,31 +293,31 @@ export default function LocalGuide() {
 
 function InsightCard({ title, icon: Icon, color, items, onAsk }) {
   const colorClasses = {
-    teal: 'bg-teal-50 text-teal-600 border-teal-200',
+    cyan: 'bg-cyan-50 text-cyan-600 border-cyan-200',
     green: 'bg-green-50 text-green-600 border-green-200',
-    red: 'bg-red-50 text-red-600 border-red-200',
+    rose: 'bg-rose-50 text-rose-600 border-rose-200',
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow">
-      <div className={`px-6 py-4 border-b ${colorClasses[color]}`}>
-        <div className="flex items-center gap-3">
-          <Icon size={24} />
-          <h4 className="font-bold">{title}</h4>
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+      <div className={`px-5 py-3 border-b ${colorClasses[color]}`}>
+        <div className="flex items-center gap-2">
+          <Icon size={20} />
+          <h4 className="font-bold text-sm">{title}</h4>
         </div>
       </div>
-      <div className="p-6">
-        <ul className="space-y-3">
+      <div className="p-5">
+        <ul className="space-y-2">
           {items.map((item, idx) => (
-            <li key={idx} className="text-sm text-slate-600 flex items-start gap-2">
-              <span className="text-teal-500 mt-1">•</span>
+            <li key={idx} className="text-sm text-gray-600 flex items-start gap-2">
+              <span className="text-rose-400 mt-1">•</span>
               {item}
             </li>
           ))}
         </ul>
         <button 
           onClick={onAsk}
-          className="mt-4 w-full py-2 text-sm font-semibold text-teal-600 hover:bg-teal-50 rounded-xl transition-colors flex items-center justify-center gap-1"
+          className="mt-4 w-full py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors flex items-center justify-center gap-1"
         >
           Learn more <ChevronRight size={16} />
         </button>

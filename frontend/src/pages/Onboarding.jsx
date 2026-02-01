@@ -70,11 +70,11 @@ export default function Onboarding() {
   const progress = (currentStep / (STEPS.length - 1)) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-rose-50 flex flex-col">
       {/* PROGRESS BAR */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-slate-200 z-50">
         <div 
-          className="h-full bg-gradient-to-r from-teal-500 to-cyan-500 transition-all duration-500"
+          className="h-full bg-gradient-to-r from-rose-500 to-pink-500 transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -91,9 +91,9 @@ export default function Onboarding() {
                   key={step.id}
                   className={`w-2 h-2 rounded-full transition-colors ${
                     idx + 1 === currentStep 
-                      ? 'bg-teal-500 scale-125' 
+                      ? 'bg-rose-500 scale-125' 
                       : idx + 1 < currentStep 
-                        ? 'bg-teal-300' 
+                        ? 'bg-rose-300' 
                         : 'bg-slate-200'
                   }`}
                 />
@@ -107,7 +107,7 @@ export default function Onboarding() {
             {/* WELCOME STEP */}
             {currentStep === 0 && (
               <div className="text-center space-y-8">
-                <div className="w-24 h-24 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-teal-200">
+                <div className="w-24 h-24 bg-gradient-to-br from-rose-400 to-pink-500 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-rose-200">
                   <Plane className="w-12 h-12 text-white" />
                 </div>
                 
@@ -126,7 +126,7 @@ export default function Onboarding() {
 
                 <button
                   onClick={handleNext}
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold rounded-2xl shadow-lg shadow-teal-200 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold rounded-2xl shadow-lg shadow-rose-200 hover:shadow-xl hover:-translate-y-0.5 transition-all"
                 >
                   Let's Get Started
                   <ChevronRight size={20} />
@@ -341,7 +341,7 @@ export default function Onboarding() {
                 <button
                   onClick={handleComplete}
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-semibold rounded-2xl shadow-lg shadow-teal-200 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-rose-500 to-pink-500 text-white font-semibold rounded-2xl shadow-lg shadow-rose-200 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50"
                 >
                   {isSubmitting ? 'Saving...' : 'Start Exploring'}
                   <ChevronRight size={20} />
@@ -361,7 +361,7 @@ export default function Onboarding() {
                 </button>
                 <button
                   onClick={handleNext}
-                  className="flex items-center gap-2 px-6 py-3 bg-teal-500 text-white font-semibold rounded-xl hover:bg-teal-600 transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 bg-rose-500 text-white font-semibold rounded-xl hover:bg-rose-600 transition-colors"
                 >
                   Continue
                   <ChevronRight size={20} />
@@ -378,8 +378,8 @@ export default function Onboarding() {
 function Feature({ icon: Icon, label }) {
   return (
     <div className="text-center">
-      <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center mx-auto mb-2">
-        <Icon className="w-6 h-6 text-teal-600" />
+      <div className="w-12 h-12 bg-rose-50 rounded-xl flex items-center justify-center mx-auto mb-2">
+        <Icon className="w-6 h-6 text-rose-600" />
       </div>
       <p className="text-xs text-slate-600">{label}</p>
     </div>
@@ -404,16 +404,16 @@ function StyleOption({ icon: Icon, label, description, selected, onClick }) {
       onClick={onClick}
       className={`p-5 rounded-2xl border-2 text-left transition-all ${
         selected 
-          ? 'border-teal-500 bg-teal-50' 
+          ? 'border-rose-500 bg-rose-50' 
           : 'border-slate-200 hover:border-slate-300 bg-white'
       }`}
     >
-      <Icon className={`w-8 h-8 mb-3 ${selected ? 'text-teal-600' : 'text-slate-400'}`} />
-      <p className={`font-semibold ${selected ? 'text-teal-700' : 'text-slate-700'}`}>{label}</p>
+      <Icon className={`w-8 h-8 mb-3 ${selected ? 'text-rose-600' : 'text-slate-400'}`} />
+      <p className={`font-semibold ${selected ? 'text-rose-700' : 'text-slate-700'}`}>{label}</p>
       <p className="text-sm text-slate-500 mt-1">{description}</p>
       {selected && (
         <div className="mt-3">
-          <span className="text-xs bg-teal-500 text-white px-2 py-1 rounded-full">Selected</span>
+          <span className="text-xs bg-rose-500 text-white px-2 py-1 rounded-full">Selected</span>
         </div>
       )}
     </button>
@@ -426,11 +426,11 @@ function InterestChip({ icon: Icon, label, selected, onClick }) {
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-3 rounded-full border-2 transition-all ${
         selected 
-          ? 'border-teal-500 bg-teal-50 text-teal-700' 
+          ? 'border-rose-500 bg-rose-50 text-rose-700' 
           : 'border-slate-200 hover:border-slate-300 text-slate-600'
       }`}
     >
-      <Icon size={18} className={selected ? 'text-teal-600' : 'text-slate-400'} />
+      <Icon size={18} className={selected ? 'text-rose-600' : 'text-slate-400'} />
       <span className="text-sm font-medium">{label}</span>
     </button>
   );
@@ -442,13 +442,13 @@ function FoodOption({ label, emoji, selected, onClick }) {
       onClick={onClick}
       className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
         selected 
-          ? 'border-teal-500 bg-teal-50' 
+          ? 'border-rose-500 bg-rose-50' 
           : 'border-slate-200 hover:border-slate-300'
       }`}
     >
       <span className="text-2xl">{emoji}</span>
-      <span className={`font-medium ${selected ? 'text-teal-700' : 'text-slate-700'}`}>{label}</span>
-      {selected && <Check size={18} className="text-teal-500 ml-auto" />}
+      <span className={`font-medium ${selected ? 'text-rose-700' : 'text-slate-700'}`}>{label}</span>
+      {selected && <Check size={18} className="text-rose-500 ml-auto" />}
     </button>
   );
 }
@@ -459,17 +459,17 @@ function PaceOption({ label, description, emoji, selected, onClick }) {
       onClick={onClick}
       className={`w-full flex items-center gap-4 p-5 rounded-2xl border-2 text-left transition-all ${
         selected 
-          ? 'border-teal-500 bg-teal-50' 
+          ? 'border-rose-500 bg-rose-50' 
           : 'border-slate-200 hover:border-slate-300'
       }`}
     >
       <span className="text-3xl">{emoji}</span>
       <div className="flex-1">
-        <p className={`font-semibold ${selected ? 'text-teal-700' : 'text-slate-700'}`}>{label}</p>
+        <p className={`font-semibold ${selected ? 'text-rose-700' : 'text-slate-700'}`}>{label}</p>
         <p className="text-sm text-slate-500 mt-1">{description}</p>
       </div>
       {selected && (
-        <div className="w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center">
+        <div className="w-6 h-6 bg-rose-500 rounded-full flex items-center justify-center">
           <Check size={14} className="text-white" />
         </div>
       )}
@@ -483,17 +483,17 @@ function AccessibilityOption({ label, description, selected, onClick }) {
       onClick={onClick}
       className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${
         selected 
-          ? 'border-teal-500 bg-teal-50' 
+          ? 'border-rose-500 bg-rose-50' 
           : 'border-slate-200 hover:border-slate-300'
       }`}
     >
       <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center ${
-        selected ? 'bg-teal-500 border-teal-500' : 'border-slate-300'
+        selected ? 'bg-rose-500 border-rose-500' : 'border-slate-300'
       }`}>
         {selected && <Check size={14} className="text-white" />}
       </div>
       <div>
-        <p className={`font-medium ${selected ? 'text-teal-700' : 'text-slate-700'}`}>{label}</p>
+        <p className={`font-medium ${selected ? 'text-rose-700' : 'text-slate-700'}`}>{label}</p>
         <p className="text-xs text-slate-500">{description}</p>
       </div>
     </button>

@@ -84,8 +84,8 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-500">Loading your travel hub...</p>
+          <div className="w-12 h-12 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading your travel hub...</p>
         </div>
       </div>
     );
@@ -100,28 +100,27 @@ export default function Dashboard() {
 
       {/* ONBOARDING BANNER */}
       {showOnboardingBanner && (
-        <div className="relative bg-gradient-to-r from-teal-500 via-teal-600 to-cyan-600 rounded-3xl p-8 text-white overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2"></div>
+        <div className="relative bg-gradient-to-r from-rose-500 to-rose-600 rounded-2xl p-6 text-white overflow-hidden">
+          <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2"></div>
           
           <button onClick={() => setShowOnboardingBanner(false)} className="absolute top-4 right-4 p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
-            <X size={20} />
+            <X size={18} />
           </button>
           
-          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="flex items-start gap-4">
-              <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
-                <Sparkles size={32} />
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                <Sparkles size={24} />
               </div>
               <div>
-                <h3 className="text-2xl font-bold mb-2">Personalize Your Experience</h3>
-                <p className="text-white/80 max-w-md">
-                  Set your travel preferences to unlock AI recommendations tailored just for you. Takes only 30 seconds.
+                <h3 className="text-xl font-bold mb-1">Personalize Your Experience</h3>
+                <p className="text-white/80 text-sm">
+                  Set your travel preferences to unlock AI recommendations tailored just for you.
                 </p>
               </div>
             </div>
-            <Link to="/onboarding" className="px-8 py-4 bg-white text-teal-600 rounded-2xl font-bold hover:bg-white/90 transition-colors flex items-center gap-2 whitespace-nowrap shadow-lg">
-              Set Preferences <ArrowRight size={18} />
+            <Link to="/onboarding" className="px-6 py-3 bg-white text-rose-600 rounded-xl font-semibold hover:bg-white/90 transition-colors flex items-center gap-2 whitespace-nowrap">
+              Set Preferences <ArrowRight size={16} />
             </Link>
           </div>
         </div>
@@ -130,10 +129,10 @@ export default function Dashboard() {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-slate-900">
+          <h1 className="text-3xl font-bold text-gray-900">
             {getGreeting()}, {user?.name?.split(' ')[0] || 'Traveler'} 👋
           </h1>
-          <p className="text-slate-500 mt-2 text-lg">
+          <p className="text-gray-500 mt-1">
             {currentTrip 
               ? `You're currently in ${currentTrip.destination}. Have an amazing trip!`
               : trips.length > 0 
@@ -141,16 +140,16 @@ export default function Dashboard() {
                 : 'Ready to plan your next adventure?'}
           </p>
         </div>
-        <button onClick={() => setShowCreateModal(true)} className="inline-flex items-center gap-2 px-6 py-4 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-teal-500/25 group">
-          <Plus size={22} /> 
+        <button onClick={() => setShowCreateModal(true)} className="inline-flex items-center gap-2 px-5 py-3 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-xl transition-all group">
+          <Plus size={20} /> 
           <span>New Trip</span>
-          <ArrowRight size={18} className="opacity-0 group-hover:opacity-100 -ml-2 group-hover:ml-0 transition-all" />
+          <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 -ml-2 group-hover:ml-0 transition-all" />
         </button>
       </div>
 
       {/* QUICK ACTIONS */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <QuickActionCard to="/itinerary" icon={Map} label="View Itinerary" color="teal" description="Day-by-day plan" />
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <QuickActionCard to="/itinerary" icon={Map} label="Itinerary" color="rose" description="Day-by-day plan" />
         <QuickActionCard to="/assistant" icon={MessageSquare} label="AI Assistant" color="blue" description="Ask anything" />
         <QuickActionCard to="/local-guide" icon={Compass} label="Local Guide" color="green" description="Discover nearby" />
         <QuickActionCard to="/vr-preview" icon={Eye} label="VR Preview" color="purple" description="Explore in 360°" />
@@ -204,13 +203,13 @@ export default function Dashboard() {
           
           {/* TRAVEL READINESS */}
           {selectedTrip && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                  <Luggage size={20} className="text-teal-600" />
+                <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                  <Luggage size={20} className="text-rose-500" />
                   Travel Readiness
                 </h3>
-                <Link to={`/trip/${selectedTrip.id}/readiness`} className="text-sm text-teal-600 font-semibold hover:underline">
+                <Link to={`/trip/${selectedTrip.id}/readiness`} className="text-sm text-rose-500 font-semibold hover:underline">
                   View All
                 </Link>
               </div>
@@ -219,27 +218,27 @@ export default function Dashboard() {
                 <ReadinessItem label="Documents Ready" progress={0} />
                 <ReadinessItem label="Visa & Requirements" progress={0} />
               </div>
-              <Link to={`/trip/${selectedTrip.id}/readiness`} className="mt-4 w-full py-3 bg-teal-50 text-teal-600 font-semibold rounded-xl hover:bg-teal-100 transition-colors flex items-center justify-center gap-2">
+              <Link to={`/trip/${selectedTrip.id}/readiness`} className="mt-4 w-full py-3 bg-rose-50 text-rose-600 font-semibold rounded-xl hover:bg-rose-100 transition-colors flex items-center justify-center gap-2">
                 Complete Checklist <ChevronRight size={18} />
               </Link>
             </div>
           )}
 
           {/* AI ASSISTANT PREVIEW */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white">
+          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 text-white">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-teal-500/20 rounded-xl">
-                <MessageSquare size={24} className="text-teal-400" />
+              <div className="p-2 bg-rose-500/20 rounded-xl">
+                <MessageSquare size={24} className="text-rose-400" />
               </div>
               <div>
                 <h3 className="font-bold">AI Travel Assistant</h3>
-                <p className="text-sm text-slate-400">Always ready to help</p>
+                <p className="text-sm text-gray-400">Always ready to help</p>
               </div>
             </div>
-            <p className="text-slate-300 text-sm mb-4">
+            <p className="text-gray-300 text-sm mb-4">
               Ask me anything about your trip—restaurants, directions, translations, local tips, and more.
             </p>
-            <Link to="/assistant" className="w-full py-3 bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2">
+            <Link to="/assistant" className="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2">
               Start Chatting <ArrowRight size={18} />
             </Link>
           </div>
@@ -269,18 +268,18 @@ export default function Dashboard() {
 
 function QuickActionCard({ to, icon: Icon, label, color, description }) {
   const colorClasses = {
-    teal: 'bg-teal-50 text-teal-600 border-teal-100 hover:bg-teal-100',
+    teal: 'bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100',
     blue: 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100',
     green: 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100',
-    purple: 'bg-purple-50 text-purple-600 border-purple-100 hover:bg-purple-100',
+    purple: 'bg-violet-50 text-violet-600 border-violet-100 hover:bg-violet-100',
     red: 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100',
   };
 
   return (
-    <Link to={to} className={`p-5 rounded-2xl border transition-all ${colorClasses[color]} group`}>
-      <Icon size={28} className="mb-3 group-hover:scale-110 transition-transform" />
-      <p className="font-bold text-slate-800">{label}</p>
-      <p className="text-xs text-slate-500 mt-1">{description}</p>
+    <Link to={to} className={`p-4 rounded-xl border transition-all ${colorClasses[color]} group`}>
+      <Icon size={24} className="mb-2 group-hover:scale-110 transition-transform" />
+      <p className="font-semibold text-gray-900 text-sm">{label}</p>
+      <p className="text-xs text-gray-500 mt-0.5">{description}</p>
     </Link>
   );
 }
@@ -316,7 +315,7 @@ function TripHighlightCard({ trip, isActive }) {
                 Currently There
               </span>
             ) : daysUntil > 0 ? (
-              <span className="inline-flex items-center gap-2 px-4 py-2 bg-teal-500 text-white text-sm font-bold rounded-full mb-4">
+              <span className="inline-flex items-center gap-2 px-4 py-2 bg-rose-500 text-white text-sm font-bold rounded-full mb-4">
                 <Clock size={14} />
                 {daysUntil} days to go
               </span>
@@ -364,9 +363,9 @@ function TripCard({ trip }) {
   })();
 
   const phaseStyles = {
-    upcoming: 'bg-teal-50 text-teal-700 border-teal-200',
+    upcoming: 'bg-rose-50 text-rose-700 border-rose-200',
     active: 'bg-green-50 text-green-700 border-green-200',
-    completed: 'bg-slate-50 text-slate-600 border-slate-200'
+    completed: 'bg-gray-50 text-gray-600 border-gray-200'
   };
 
   const phaseLabels = {
@@ -376,15 +375,15 @@ function TripCard({ trip }) {
   };
 
   return (
-    <Link to={`/trip/${trip.id}/readiness`} className="block bg-white rounded-2xl border border-slate-200 p-5 hover:shadow-lg hover:border-teal-200 transition-all group">
+    <Link to={`/trip/${trip.id}/readiness`} className="block bg-white rounded-xl border border-gray-200 p-4 hover:shadow-lg hover:border-rose-200 transition-all group">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center text-white">
-            <Plane size={20} />
+          <div className="w-11 h-11 bg-gradient-to-br from-rose-400 to-rose-600 rounded-xl flex items-center justify-center text-white">
+            <Plane size={18} />
           </div>
           <div>
-            <h3 className="font-bold text-slate-800 group-hover:text-teal-600 transition-colors">{trip.destination}</h3>
-            <p className="text-sm text-slate-500">
+            <h3 className="font-semibold text-gray-900 group-hover:text-rose-600 transition-colors">{trip.destination}</h3>
+            <p className="text-sm text-gray-500">
               {new Date(trip.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </p>
           </div>
@@ -395,7 +394,7 @@ function TripCard({ trip }) {
       </div>
       <div className="flex items-center justify-between text-sm text-slate-500">
         <span>{Math.ceil((new Date(trip.end_date) - new Date(trip.start_date)) / (1000 * 60 * 60 * 24))} days</span>
-        <ChevronRight size={18} className="text-slate-400 group-hover:text-teal-500 group-hover:translate-x-1 transition-all" />
+        <ChevronRight size={18} className="text-gray-400 group-hover:text-rose-500 group-hover:translate-x-1 transition-all" />
       </div>
     </Link>
   );
@@ -405,11 +404,11 @@ function ReadinessItem({ label, progress }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <span className="text-sm text-slate-600">{label}</span>
-        <span className="text-sm font-semibold text-slate-800">{progress}%</span>
+        <span className="text-sm text-gray-600">{label}</span>
+        <span className="text-sm font-semibold text-gray-800">{progress}%</span>
       </div>
-      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-        <div className="h-full bg-teal-500 rounded-full transition-all" style={{ width: `${progress}%` }}></div>
+      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div className="h-full bg-rose-500 rounded-full transition-all" style={{ width: `${progress}%` }}></div>
       </div>
     </div>
   );
@@ -417,16 +416,16 @@ function ReadinessItem({ label, progress }) {
 
 function EmptyState({ onCreateTrip }) {
   return (
-    <div className="bg-gradient-to-br from-slate-50 to-white rounded-3xl border-2 border-dashed border-slate-200 p-12 text-center">
-      <div className="w-20 h-20 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-6">
-        <Plane className="text-teal-600" size={36} />
+    <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-10 text-center">
+      <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-5">
+        <Plane className="text-rose-600" size={28} />
       </div>
-      <h3 className="text-2xl font-bold text-slate-800 mb-3">No trips planned yet</h3>
-      <p className="text-slate-500 mb-8 max-w-md mx-auto">
+      <h3 className="text-xl font-bold text-gray-900 mb-2">No trips planned yet</h3>
+      <p className="text-gray-500 mb-6 max-w-md mx-auto text-sm">
         Start your journey by creating your first trip. Our AI will help you plan the perfect itinerary.
       </p>
-      <button onClick={onCreateTrip} className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-bold rounded-2xl hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg shadow-teal-500/25">
-        <Plus size={22} /> Create Your First Trip
+      <button onClick={onCreateTrip} className="inline-flex items-center gap-2 px-6 py-3 bg-rose-500 text-white font-semibold rounded-xl hover:bg-rose-600 transition-all">
+        <Plus size={20} /> Create Your First Trip
       </button>
     </div>
   );
@@ -513,27 +512,27 @@ function CreateTripModal({ onClose, onCreated }) {
               value={formData.destination}
               onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
               placeholder="e.g., Paris, France"
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Start Date</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Start Date</label>
               <input
                 type="date"
                 value={formData.start_date}
                 onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">End Date</label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">End Date</label>
               <input
                 type="date"
                 value={formData.end_date}
                 onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
               />
             </div>
           </div>
@@ -549,7 +548,7 @@ function CreateTripModal({ onClose, onCreated }) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-4 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-bold rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 py-4 bg-gradient-to-r from-rose-500 to-rose-600 text-white font-bold rounded-xl hover:from-rose-600 hover:to-rose-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>

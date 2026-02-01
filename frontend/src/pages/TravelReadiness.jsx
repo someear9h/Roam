@@ -138,8 +138,8 @@ export default function TravelReadiness() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading travel checklist...</p>
+          <div className="w-12 h-12 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading travel checklist...</p>
         </div>
       </div>
     );
@@ -152,20 +152,20 @@ export default function TravelReadiness() {
     <div className="max-w-4xl mx-auto space-y-6 pb-24">
       {/* HEADER */}
       <div className="flex items-center gap-4">
-        <Link to="/dashboard" className="p-3 hover:bg-slate-100 rounded-xl transition-colors">
-          <ArrowLeft className="w-5 h-5 text-slate-600" />
+        <Link to="/dashboard" className="p-3 hover:bg-gray-100 rounded-xl transition-colors">
+          <ArrowLeft className="w-5 h-5 text-gray-600" />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Travel Readiness</h1>
-          <p className="text-slate-500 flex items-center gap-2 mt-1">
-            <MapPin size={16} className="text-teal-500" />
+          <h1 className="text-3xl font-bold text-gray-800">Travel Readiness</h1>
+          <p className="text-gray-500 flex items-center gap-2 mt-1">
+            <MapPin size={16} className="text-rose-500" />
             Everything you need for {trip?.destination || 'your trip'}
           </p>
         </div>
       </div>
 
       {/* PROGRESS HERO */}
-      <div className="relative bg-gradient-to-r from-teal-500 via-teal-600 to-cyan-600 rounded-3xl p-8 text-white overflow-hidden">
+      <div className="relative bg-gradient-to-r from-rose-500 via-rose-600 to-pink-600 rounded-3xl p-8 text-white overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/4"></div>
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
@@ -175,15 +175,15 @@ export default function TravelReadiness() {
             </div>
             <div>
               <h2 className="text-2xl font-bold">Packing Progress</h2>
-              <p className="text-teal-100 mt-1">Track your preparation checklist</p>
+              <p className="text-rose-100 mt-1">Track your preparation checklist</p>
             </div>
           </div>
           
           <div className="flex items-center gap-6">
             <div className="text-center">
               <span className="text-5xl font-bold">{packingStats.checked}</span>
-              <span className="text-2xl text-teal-200">/{packingStats.total}</span>
-              <p className="text-sm text-teal-100 mt-1">items packed</p>
+              <span className="text-2xl text-rose-200">/{packingStats.total}</span>
+              <p className="text-sm text-rose-100 mt-1">items packed</p>
             </div>
             <div className="w-24 h-24 relative">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
@@ -217,15 +217,15 @@ export default function TravelReadiness() {
         <CollapsibleSection
           title="Packing Checklist"
           icon={Luggage}
-          color="teal"
+          color="rose"
           isExpanded={expandedSections.packing}
           onToggle={() => toggleSection('packing')}
           badge={`${packingStats.checked}/${packingStats.total}`}
         >
           {readiness?.packing_checklist && Object.entries(readiness.packing_checklist).map(([category, items]) => (
             <div key={category} className="mb-6 last:mb-0">
-              <h4 className="font-bold text-slate-700 capitalize mb-3 flex items-center gap-2">
-                <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
+              <h4 className="font-bold text-gray-700 capitalize mb-3 flex items-center gap-2">
+                <span className="w-2 h-2 bg-rose-500 rounded-full"></span>
                 {category.replace('_', ' ')}
               </h4>
               <div className="grid md:grid-cols-2 gap-2">
@@ -407,7 +407,7 @@ export default function TravelReadiness() {
 
 function CollapsibleSection({ title, icon: Icon, color, isExpanded, onToggle, badge, children }) {
   const colorClasses = {
-    teal: 'bg-teal-50 text-teal-600 border-teal-200',
+    rose: 'bg-rose-50 text-rose-600 border-rose-200',
     green: 'bg-green-50 text-green-600 border-green-200',
     blue: 'bg-blue-50 text-blue-600 border-blue-200',
     red: 'bg-red-50 text-red-600 border-red-200',
@@ -416,7 +416,7 @@ function CollapsibleSection({ title, icon: Icon, color, isExpanded, onToggle, ba
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
       <button
         onClick={onToggle}
         className="w-full flex items-center justify-between p-5 hover:bg-slate-50 transition-colors"
@@ -450,12 +450,12 @@ function ChecklistItem({ label, checked, onToggle }) {
       onClick={onToggle}
       className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left w-full ${
         checked 
-          ? 'bg-teal-50 border-teal-200 text-teal-700' 
-          : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+          ? 'bg-rose-50 border-rose-200 text-rose-700' 
+          : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
       }`}
     >
       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-        checked ? 'bg-teal-500 border-teal-500' : 'border-slate-300'
+        checked ? 'bg-rose-500 border-rose-500' : 'border-gray-300'
       }`}>
         {checked && <Check size={12} className="text-white" />}
       </div>
