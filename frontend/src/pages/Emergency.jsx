@@ -124,7 +124,7 @@ export default function Emergency() {
                 href={`https://maps.google.com/?q=${location.lat},${location.lng}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-rose-500 font-semibold hover:underline mb-6"
+                className="inline-flex items-center gap-2 text-coral-500 font-semibold hover:underline mb-6"
               >
                 <ExternalLink size={18} />
                 View on Google Maps
@@ -156,7 +156,7 @@ export default function Emergency() {
             <span>
               {location.city}{location.country ? `, ${location.country}` : ''}
             </span>
-            <button onClick={detectLocation} className="text-rose-500 text-sm font-semibold hover:underline">
+            <button onClick={detectLocation} className="text-coral-500 text-sm font-semibold hover:underline">
               Refresh
             </button>
           </div>
@@ -202,7 +202,7 @@ export default function Emergency() {
             className={`w-full py-4 rounded-2xl font-bold text-lg transition-all ${
               isSharing 
                 ? 'bg-green-500 text-white hover:bg-green-600' 
-                : 'bg-gradient-to-r from-rose-500 to-rose-600 text-white hover:from-rose-600 hover:to-rose-700'
+                : 'bg-gradient-to-r from-coral-500 to-coral-600 text-white hover:from-coral-600 hover:to-coral-700'
             }`}
           >
             {isSharing ? (

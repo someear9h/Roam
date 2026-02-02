@@ -47,7 +47,7 @@ export default function TripOverview() {
           <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <Map className="text-rose-500" size={20} />
+                <Map className="text-coral-500" size={20} />
                 Journey Timeline
               </h3>
               <span className="text-xs font-bold bg-green-100 text-green-700 px-3 py-1 rounded-full">On Schedule</span>
@@ -56,12 +56,12 @@ export default function TripOverview() {
             <div className="relative px-4">
               {/* Connecting Line */}
               <div className="absolute top-5 left-0 w-full h-1 bg-gray-100 rounded-full"></div>
-              <div className="absolute top-5 left-0 w-1/2 h-1 bg-rose-500 rounded-full transition-all duration-1000"></div>
+              <div className="absolute top-5 left-0 w-1/2 h-1 bg-coral-500 rounded-full transition-all duration-1000"></div>
               
               <div className="relative z-10 flex justify-between w-full">
                 {/* Step 1: Done */}
                 <div className="flex flex-col items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-md ring-4 ring-white">
+                  <div className="w-10 h-10 rounded-full bg-coral-500 text-white flex items-center justify-center shadow-md ring-4 ring-white">
                     <Check size={20} />
                   </div>
                   <div className="text-center">
@@ -72,13 +72,13 @@ export default function TripOverview() {
                 
                 {/* Step 2: Active */}
                 <div className="flex flex-col items-center gap-3">
-                  <div className="relative w-12 h-12 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg ring-4 ring-white">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-20"></span>
+                  <div className="relative w-12 h-12 rounded-full bg-coral-500 text-white flex items-center justify-center shadow-lg ring-4 ring-white">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-coral-500 opacity-20"></span>
                     <Plane size={24} />
                   </div>
                   <div className="text-center">
-                    <p className="text-base font-bold text-rose-500">Travel Day</p>
-                    <p className="text-xs font-medium text-rose-500">Active Now</p>
+                    <p className="text-base font-bold text-coral-500">Travel Day</p>
+                    <p className="text-xs font-medium text-coral-500">Active Now</p>
                   </div>
                 </div>
                 

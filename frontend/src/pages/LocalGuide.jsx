@@ -122,7 +122,7 @@ export default function LocalGuide() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Local Guide</h1>
           <p className="text-gray-500 mt-0.5 flex items-center gap-2 text-sm">
-            <MapPin size={14} className="text-rose-500" />
+            <MapPin size={14} className="text-coral-500" />
             {destination}
             {userLocation.lat && (
               <span className="flex items-center gap-1 text-green-600 text-xs bg-green-50 px-2 py-0.5 rounded-full">
@@ -140,7 +140,7 @@ export default function LocalGuide() {
         <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-gray-900/80 to-transparent"></div>
         
         <div className="relative z-10 max-w-2xl">
-          <div className="flex items-center gap-2 text-rose-400 mb-3">
+          <div className="flex items-center gap-2 text-coral-400 mb-3">
             <Sparkles size={18} />
             <span className="font-semibold text-sm">AI-Powered Insights</span>
           </div>
@@ -161,13 +161,13 @@ export default function LocalGuide() {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && askLocalGuide()}
                 placeholder="Ask anything... e.g., 'Best street food spots?'"
-                className="w-full pl-12 pr-4 py-4 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-rose-500 text-gray-700 placeholder-gray-400"
+                className="w-full pl-12 pr-4 py-4 rounded-xl border-0 focus:outline-none focus:ring-2 focus:ring-coral-500 text-gray-700 placeholder-gray-400"
               />
             </div>
             <button 
               onClick={() => askLocalGuide()}
               disabled={isLoading || !query.trim()}
-              className="px-6 py-4 bg-rose-500 text-white font-bold rounded-xl hover:bg-rose-600 disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg"
+              className="px-6 py-4 bg-coral-500 text-white font-bold rounded-xl hover:bg-coral-600 disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg"
             >
               {isLoading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
               <span className="hidden md:inline">Ask</span>
@@ -180,7 +180,7 @@ export default function LocalGuide() {
       <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-hide">
         {CATEGORIES.map((cat) => {
           const colorClasses = {
-            rose: 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100',
+            rose: 'bg-coral-50 text-coral-600 border-coral-200 hover:bg-coral-100',
             blue: 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100',
             violet: 'bg-violet-50 text-violet-600 border-violet-200 hover:bg-violet-100',
             cyan: 'bg-cyan-50 text-cyan-600 border-cyan-200 hover:bg-cyan-100',
@@ -209,13 +209,13 @@ export default function LocalGuide() {
       {/* AI RESPONSE - Clean Card */}
       {aiResponse && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="bg-rose-500 px-6 py-4 flex items-center gap-3">
+          <div className="bg-coral-500 px-6 py-4 flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-xl">
               <Compass size={22} className="text-white" />
             </div>
             <div>
               <h3 className="font-bold text-white">AI Local Guide</h3>
-              <p className="text-sm text-rose-100">Recommendations for {destination}</p>
+              <p className="text-sm text-coral-100">Recommendations for {destination}</p>
             </div>
           </div>
           <div className="p-6">
@@ -234,13 +234,13 @@ export default function LocalGuide() {
             <button
               key={idx}
               onClick={() => askLocalGuide(item.query)}
-              className="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-rose-300 hover:shadow-md transition-all text-left group"
+              className="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:border-coral-300 hover:shadow-md transition-all text-left group"
             >
-              <div className="p-3 bg-rose-50 rounded-xl text-rose-500 group-hover:bg-rose-100 transition-colors">
+              <div className="p-3 bg-coral-50 rounded-xl text-coral-500 group-hover:bg-coral-100 transition-colors">
                 <item.icon size={20} />
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-gray-900 group-hover:text-rose-600 transition-colors">
+                <h4 className="font-semibold text-gray-900 group-hover:text-coral-600 transition-colors">
                   {item.label}
                 </h4>
                 <p className="text-sm text-gray-500 mt-1 line-clamp-2">{item.query}</p>
@@ -282,7 +282,7 @@ export default function LocalGuide() {
       {isLoading && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-8 shadow-xl text-center">
-            <div className="w-12 h-12 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <div className="w-12 h-12 border-4 border-coral-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-600 font-medium">Getting local insights...</p>
           </div>
         </div>
@@ -295,7 +295,7 @@ function InsightCard({ title, icon: Icon, color, items, onAsk }) {
   const colorClasses = {
     cyan: 'bg-cyan-50 text-cyan-600 border-cyan-200',
     green: 'bg-green-50 text-green-600 border-green-200',
-    rose: 'bg-rose-50 text-rose-600 border-rose-200',
+    rose: 'bg-coral-50 text-coral-600 border-coral-200',
   };
 
   return (
@@ -310,14 +310,14 @@ function InsightCard({ title, icon: Icon, color, items, onAsk }) {
         <ul className="space-y-2">
           {items.map((item, idx) => (
             <li key={idx} className="text-sm text-gray-600 flex items-start gap-2">
-              <span className="text-rose-400 mt-1">•</span>
+              <span className="text-coral-400 mt-1">•</span>
               {item}
             </li>
           ))}
         </ul>
         <button 
           onClick={onAsk}
-          className="mt-4 w-full py-2 text-sm font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors flex items-center justify-center gap-1"
+          className="mt-4 w-full py-2 text-sm font-semibold text-coral-600 hover:bg-coral-50 rounded-lg transition-colors flex items-center justify-center gap-1"
         >
           Learn more <ChevronRight size={16} />
         </button>

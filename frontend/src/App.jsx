@@ -20,7 +20,7 @@ import Onboarding from './pages/Onboarding';
 import TravelReadiness from './pages/TravelReadiness';
 import VRPreview from './pages/VRPreview';
 
-// --- NAVBAR COMPONENT (Airbnb-style) ---
+// --- NAVBAR COMPONENT (Enhanced Style) ---
 const Navbar = () => {
   const location = useLocation();
   const { isAuthenticated, logout, user } = useAuth();
@@ -34,17 +34,19 @@ const Navbar = () => {
 
   return (
     <>
-      {/* DESKTOP NAV - Airbnb Style */}
-      <nav className="hidden md:flex fixed top-0 w-full bg-white border-b border-gray-200 z-50 h-20 items-center justify-between px-6 lg:px-10">
+      {/* DESKTOP NAV - Enhanced Style */}
+      <nav className="hidden md:flex fixed top-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-200 z-50 h-20 items-center justify-between px-6 lg:px-10">
         
         {/* LEFT: LOGO */}
         <Link to="/dashboard" className="flex items-center gap-2">
-          <img src="/logo.png" alt="Roam" className="h-8 w-auto" onError={(e) => e.target.style.display = 'none'} />
-          <span className="text-xl font-bold text-rose-500">Roam</span>
+          <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center">
+            <Globe size={22} className="text-white" />
+          </div>
+          <span className="text-xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Roam</span>
         </Link>
 
         {/* CENTER: NAV PILLS */}
-        <div className="flex items-center gap-1 bg-gray-100 p-1.5 rounded-full">
+        <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-full">
           <NavLink to="/dashboard" label="Dashboard" icon={Home} active={isActive('/dashboard')} />
           <NavLink to="/itinerary" label="Itinerary" icon={Map} active={isActive('/itinerary')} />
           <NavLink to="/assistant" label="Assistant" icon={MessageSquare} active={isActive('/assistant')} />
@@ -56,18 +58,18 @@ const Navbar = () => {
         <div className="flex items-center gap-3">
           <Link 
             to="/emergency" 
-            className="flex items-center gap-2 text-rose-600 font-semibold text-sm bg-rose-50 px-4 py-2.5 rounded-full border border-rose-100 hover:bg-rose-100 transition-colors"
+            className="flex items-center gap-2 text-red-600 font-semibold text-sm bg-red-50 px-4 py-2.5 rounded-full border border-red-100 hover:bg-red-100 transition-colors"
           >
             <ShieldAlert size={18} />
             <span>Emergency</span>
           </Link>
           
-          <div className="h-8 w-px bg-gray-200"></div>
+          <div className="h-8 w-px bg-slate-200"></div>
 
-          <div className="flex items-center gap-2 border border-gray-300 rounded-full p-1.5 pl-3 hover:shadow-md transition-shadow cursor-pointer">
-            <Menu size={16} className="text-gray-600" />
+          <div className="flex items-center gap-2 border border-slate-200 rounded-full p-1.5 pl-3 hover:shadow-md transition-shadow cursor-pointer">
+            <Menu size={16} className="text-slate-600" />
             <div className="relative">
-              <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-white text-sm font-medium">
+              <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
                 {user?.name?.charAt(0) || 'U'}
               </div>
             </div>
@@ -75,7 +77,7 @@ const Navbar = () => {
           
           <button
             onClick={logout}
-            className="p-2.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
             title="Logout"
           >
             <LogOut size={18} />
@@ -83,14 +85,14 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* MOBILE NAV - Airbnb Style */}
-      <nav className="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 py-2 px-2 flex justify-around items-center z-50 pb-safe">
+      {/* MOBILE NAV - Enhanced Style */}
+      <nav className="md:hidden fixed bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-slate-200 py-2 px-2 flex justify-around items-center z-50 pb-safe">
         <MobileNavLink to="/dashboard" icon={Home} label="Home" active={isActive('/dashboard')} />
         <MobileNavLink to="/itinerary" icon={Map} label="Trips" active={isActive('/itinerary')} />
         <MobileNavLink to="/vr-preview" icon={Eye} label="VR" active={isActive('/vr-preview')} />
         <MobileNavLink to="/assistant" icon={MessageSquare} label="Chat" active={isActive('/assistant')} />
         <MobileNavLink to="/local-guide" icon={Globe} label="Guide" active={isActive('/local-guide')} />
-        <Link to="/emergency" className="flex flex-col items-center justify-center text-rose-500">
+        <Link to="/emergency" className="flex flex-col items-center justify-center text-red-500">
           <ShieldAlert size={22} />
           <span className="text-[10px] font-semibold mt-0.5">SOS</span>
         </Link>
@@ -105,8 +107,8 @@ const NavLink = ({ to, label, icon: Icon, active }) => (
     to={to} 
     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
       active 
-        ? 'bg-white text-gray-900 shadow-sm' 
-        : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'
+        ? 'bg-white text-orange-600 shadow-sm' 
+        : 'text-slate-500 hover:text-slate-900 hover:bg-white/60'
     }`}
   >
     {Icon && <Icon size={16} />}
@@ -115,7 +117,7 @@ const NavLink = ({ to, label, icon: Icon, active }) => (
 );
 
 const MobileNavLink = ({ to, icon: Icon, label, active }) => (
-  <Link to={to} className={`flex flex-col items-center justify-center px-3 py-1 ${active ? 'text-rose-500' : 'text-gray-400'}`}>
+  <Link to={to} className={`flex flex-col items-center justify-center px-3 py-1 ${active ? 'text-orange-600' : 'text-slate-400'}`}>
     <Icon size={22} strokeWidth={active ? 2.5 : 2} />
     <span className="text-[10px] font-semibold mt-0.5">{label}</span>
   </Link>
@@ -136,7 +138,7 @@ function Layout() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-500">Loading...</p>
         </div>
       </div>

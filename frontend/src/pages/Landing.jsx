@@ -1,491 +1,480 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
-  Search, MapPin, Calendar, Users, Star, Heart,
-  ChevronRight, ArrowRight, Globe, Sparkles, Shield,
-  MessageSquare, Eye, Map, Play, CheckCircle, Plane,
-  Coffee, Camera, Mountain, Building, TreePine, Waves,
-  Menu, X
+  Search, MapPin, Calendar, ChevronRight, ArrowRight, 
+  Plane, Info, CreditCard, FileText, Bus, Globe, Building,
+  Eye, ChevronLeft, Play, Star, Clock, Menu, X
 } from 'lucide-react';
 
-// Airbnb-style category icons
-const CATEGORIES = [
-  { id: 'trending', label: 'Trending', icon: Sparkles },
-  { id: 'beach', label: 'Beach', icon: Waves },
-  { id: 'mountain', label: 'Mountains', icon: Mountain },
-  { id: 'city', label: 'Cities', icon: Building },
-  { id: 'countryside', label: 'Countryside', icon: TreePine },
-  { id: 'unique', label: 'Unique stays', icon: Camera },
+// Travel Services - like the Taiwan tourism site
+const TRAVEL_SERVICES = [
+  { id: 'arrival', label: 'Arrival & Departure', icon: Plane, link: '/assistant' },
+  { id: 'info', label: 'Travel Information', icon: Info, link: '/local-guide' },
+  { id: 'visa', label: 'Visa Info', icon: FileText, link: '/assistant' },
+  { id: 'transport', label: 'Transport', icon: Bus, link: '/local-guide' },
+  { id: 'tourism', label: 'Tourism Offices', icon: Globe, link: '/assistant' },
+  { id: 'accommodation', label: 'Accommodation', icon: Building, link: '/assistant' },
 ];
 
-// Featured destinations with stock images
+// Featured Destinations with VR
 const FEATURED_DESTINATIONS = [
   {
     id: 1,
-    name: 'Paris, France',
-    image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80',
-    rating: 4.96,
-    reviews: 2847,
-    price: 'from $120/night',
-    superhost: true,
-    category: 'city',
+    name: 'Yangmingshan National Park',
+    location: 'Taipei City',
+    image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=600&q=80',
     vrAvailable: true,
   },
   {
     id: 2,
-    name: 'Santorini, Greece',
-    image: 'https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?w=800&q=80',
-    rating: 4.92,
-    reviews: 1923,
-    price: 'from $180/night',
-    superhost: true,
-    category: 'beach',
+    name: 'Tamsui Old Street',
+    location: 'New Taipei City',
+    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80',
     vrAvailable: true,
   },
   {
     id: 3,
-    name: 'Tokyo, Japan',
-    image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&q=80',
-    rating: 4.89,
-    reviews: 3421,
-    price: 'from $95/night',
-    superhost: false,
-    category: 'city',
+    name: 'Sun Moon Lake',
+    location: 'Nantou County',
+    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=80',
     vrAvailable: true,
   },
   {
     id: 4,
-    name: 'Swiss Alps',
-    image: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=800&q=80',
-    rating: 4.98,
-    reviews: 892,
-    price: 'from $250/night',
-    superhost: true,
-    category: 'mountain',
-    vrAvailable: true,
-  },
-  {
-    id: 5,
-    name: 'Bali, Indonesia',
-    image: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80',
-    rating: 4.94,
-    reviews: 2156,
-    price: 'from $85/night',
-    superhost: true,
-    category: 'beach',
-    vrAvailable: true,
-  },
-  {
-    id: 6,
-    name: 'New York, USA',
-    image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800&q=80',
-    rating: 4.87,
-    reviews: 4521,
-    price: 'from $200/night',
-    superhost: false,
-    category: 'city',
-    vrAvailable: true,
-  },
-  {
-    id: 7,
-    name: 'Machu Picchu, Peru',
-    image: 'https://images.unsplash.com/photo-1587595431973-160d0d94add1?w=800&q=80',
-    rating: 4.99,
-    reviews: 1287,
-    price: 'from $150/night',
-    superhost: true,
-    category: 'mountain',
-    vrAvailable: true,
-  },
-  {
-    id: 8,
-    name: 'Maldives',
-    image: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=800&q=80',
-    rating: 4.97,
-    reviews: 678,
-    price: 'from $450/night',
-    superhost: true,
-    category: 'beach',
+    name: 'Jiufen Village',
+    location: 'New Taipei City',
+    image: 'https://images.unsplash.com/photo-1480796927426-f609979314bd?w=600&q=80',
     vrAvailable: true,
   },
 ];
 
+// Upcoming Events
+const UPCOMING_EVENTS = [
+  {
+    id: 1,
+    name: 'Keelung Mid-Summer Ghost Festival',
+    date: 'Aug 18 - Sep 12',
+    image: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=600&q=80',
+  },
+  {
+    id: 2,
+    name: 'Taiwan East Coast Land Arts Festival',
+    date: 'Jun 21 - Sep 20',
+    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&q=80',
+  },
+];
+
 export default function Landing() {
-  const [activeCategory, setActiveCategory] = useState('trending');
-  const [favorites, setFavorites] = useState([]);
-  const [searchFocused, setSearchFocused] = useState(false);
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentDestIndex, setCurrentDestIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredDestinations = activeCategory === 'trending' 
-    ? FEATURED_DESTINATIONS 
-    : FEATURED_DESTINATIONS.filter(d => d.category === activeCategory);
-
-  const toggleFavorite = (id, e) => {
+  const handleSearch = (e) => {
     e.preventDefault();
-    e.stopPropagation();
-    setFavorites(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
+    if (searchQuery.trim()) {
+      navigate('/login');
+    }
+  };
+
+  const nextDestination = () => {
+    setCurrentDestIndex((prev) => (prev + 1) % FEATURED_DESTINATIONS.length);
+  };
+
+  const prevDestination = () => {
+    setCurrentDestIndex((prev) => (prev - 1 + FEATURED_DESTINATIONS.length) % FEATURED_DESTINATIONS.length);
+  };
+
+  const handleVRPreview = (destinationId) => {
+    navigate(`/vr-preview?destination=${destinationId}`);
   };
 
   return (
     <div className="min-h-screen bg-white">
-      {/* NAVBAR - Airbnb Style */}
-      <nav className="fixed top-0 w-full bg-white border-b border-gray-200 z-50">
-        <div className="max-w-[1760px] mx-auto px-6 md:px-10 lg:px-20">
-          <div className="flex items-center justify-between h-20">
+      {/* HEADER / NAVBAR */}
+      <header className="sticky top-0 z-50 bg-white border-b border-slate-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2">
-              <img src="/logo.png" alt="Roam" className="h-8 w-auto" onError={(e) => {
-                e.target.style.display = 'none';
-              }} />
-              <span className="text-2xl font-bold text-rose-500">Roam</span>
+              <div className="text-2xl font-bold">
+                <span className="text-coral-500">ROAM</span>
+              </div>
+              <span className="hidden sm:block text-xs text-slate-400 border-l border-slate-200 pl-2 ml-1">
+                TRAVEL COMPANION
+              </span>
             </Link>
 
-            {/* Center Search Bar - Desktop */}
-            <div className="hidden md:flex items-center">
-              <div className={`flex items-center border rounded-full shadow-sm hover:shadow-md transition-shadow ${searchFocused ? 'shadow-md' : ''}`}>
-                <button className="px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-100 rounded-full">
-                  Anywhere
-                </button>
-                <span className="h-6 w-px bg-gray-300"></span>
-                <button className="px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-100 rounded-full">
-                  Any week
-                </button>
-                <span className="h-6 w-px bg-gray-300"></span>
-                <button className="px-4 py-3 text-sm text-gray-500 hover:bg-gray-100 rounded-full flex items-center gap-2">
-                  Add guests
-                  <div className="p-2 bg-rose-500 rounded-full">
-                    <Search size={14} className="text-white" />
-                  </div>
-                </button>
-              </div>
-            </div>
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center gap-8">
+              <NavLink href="#destinations">Destinations</NavLink>
+              <NavLink href="#services">Travel Services</NavLink>
+              <NavLink href="#events">Events</NavLink>
+              <NavLink href="#guide">Travel Guide</NavLink>
+            </nav>
 
-            {/* Right Actions */}
-            <div className="flex items-center gap-2">
-              <Link to="/login" className="hidden md:block px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
-                Become a Host
-              </Link>
-              <button className="hidden md:block p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <Globe size={18} className="text-gray-600" />
-              </button>
-              <Link to="/login" className="flex items-center gap-2 border border-gray-300 rounded-full p-1.5 pl-3 hover:shadow-md transition-shadow">
-                <Menu size={16} className="text-gray-600" />
-                <div className="w-8 h-8 bg-gray-500 rounded-full flex items-center justify-center">
-                  <Users size={16} className="text-white" />
-                </div>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* HERO SECTION */}
-      <section className="pt-20">
-        <div className="relative h-[70vh] min-h-[500px] overflow-hidden">
-          <div className="absolute inset-0">
-            <img 
-              src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1920&q=80" 
-              alt="Travel" 
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
-          </div>
-          
-          <div className="relative z-10 h-full flex items-center">
-            <div className="max-w-[1760px] mx-auto px-6 md:px-10 lg:px-20 w-full">
-              <div className="max-w-2xl">
-                <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-                  Find your next
-                  <span className="block text-rose-400">adventure</span>
-                </h1>
-                <p className="text-xl text-white/90 mb-8 leading-relaxed">
-                  Explore destinations in virtual reality before you book. 
-                  AI-powered travel planning for unforgettable experiences.
-                </p>
-                
-                {/* Hero Search Box */}
-                <div className="bg-white rounded-2xl p-2 shadow-xl max-w-xl">
-                  <div className="flex flex-col md:flex-row gap-2">
-                    <div className="flex-1 p-3 border-b md:border-b-0 md:border-r border-gray-200">
-                      <label className="block text-xs font-bold text-gray-800 mb-1">Where</label>
-                      <input 
-                        type="text" 
-                        placeholder="Search destinations" 
-                        className="w-full text-sm text-gray-600 placeholder-gray-400 outline-none"
-                      />
-                    </div>
-                    <div className="flex-1 p-3 border-b md:border-b-0 md:border-r border-gray-200">
-                      <label className="block text-xs font-bold text-gray-800 mb-1">When</label>
-                      <input 
-                        type="text" 
-                        placeholder="Add dates" 
-                        className="w-full text-sm text-gray-600 placeholder-gray-400 outline-none"
-                      />
-                    </div>
-                    <Link 
-                      to="/login" 
-                      className="flex items-center justify-center gap-2 bg-gradient-to-r from-rose-500 to-rose-600 text-white font-bold px-6 py-3 rounded-xl hover:from-rose-600 hover:to-rose-700 transition-all"
-                    >
-                      <Search size={18} />
-                      <span>Explore</span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CATEGORY PILLS */}
-      <section className="sticky top-20 bg-white border-b border-gray-200 z-40">
-        <div className="max-w-[1760px] mx-auto px-6 md:px-10 lg:px-20">
-          <div className="flex items-center gap-8 py-4 overflow-x-auto scrollbar-hide">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`flex flex-col items-center gap-2 pb-2 border-b-2 transition-all whitespace-nowrap ${
-                  activeCategory === cat.id 
-                    ? 'border-gray-800 text-gray-800' 
-                    : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'
-                }`}
-              >
-                <cat.icon size={24} strokeWidth={1.5} />
-                <span className="text-xs font-medium">{cat.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FEATURED DESTINATIONS - Airbnb Grid */}
-      <section className="py-8">
-        <div className="max-w-[1760px] mx-auto px-6 md:px-10 lg:px-20">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredDestinations.map((dest) => (
-              <Link 
-                key={dest.id} 
-                to="/login"
-                className="group cursor-pointer"
-              >
-                <div className="relative aspect-square rounded-xl overflow-hidden mb-3">
-                  <img 
-                    src={dest.image} 
-                    alt={dest.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <button 
-                    onClick={(e) => toggleFavorite(dest.id, e)}
-                    className="absolute top-3 right-3 p-2"
-                  >
-                    <Heart 
-                      size={24} 
-                      className={`${favorites.includes(dest.id) ? 'fill-rose-500 text-rose-500' : 'fill-black/50 text-white'} drop-shadow-md hover:scale-110 transition-transform`}
-                    />
-                  </button>
-                  {dest.vrAvailable && (
-                    <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-white/95 backdrop-blur-sm px-2.5 py-1.5 rounded-lg text-xs font-semibold text-gray-800 shadow-sm">
-                      <Eye size={14} className="text-rose-500" />
-                      VR Preview
-                    </div>
-                  )}
-                  {dest.superhost && (
-                    <div className="absolute top-3 left-3 bg-white px-2 py-1 rounded-md text-xs font-semibold text-gray-800 shadow-sm">
-                      Superhost
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">{dest.name}</h3>
-                    <div className="flex items-center gap-1">
-                      <Star size={14} className="fill-gray-800 text-gray-800" />
-                      <span className="text-sm font-medium">{dest.rating}</span>
-                    </div>
-                  </div>
-                  <p className="text-gray-500 text-sm">{dest.reviews.toLocaleString()} reviews</p>
-                  <p className="font-semibold text-gray-900">{dest.price}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* VR EXPERIENCE SECTION */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-[1760px] mx-auto px-6 md:px-10 lg:px-20">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <span className="inline-flex items-center gap-2 text-rose-500 font-semibold text-sm mb-4">
-                <Eye size={18} />
-                NEW FEATURE
-              </span>
-              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                Experience destinations
-                <span className="block text-rose-500">before you book</span>
-              </h2>
-              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                Take a virtual tour of your accommodation. Walk through living rooms, 
-                bedrooms, kitchens, and outdoor spaces in immersive 360° VR. 
-                Know exactly what you're getting before you arrive.
-              </p>
-              <div className="flex flex-wrap gap-4 mb-8">
-                <FeaturePill icon={Eye} text="360° Virtual Tours" />
-                <FeaturePill icon={Camera} text="HD Quality" />
-                <FeaturePill icon={Sparkles} text="AI Recommendations" />
-              </div>
+            {/* CTA Buttons */}
+            <div className="hidden md:flex items-center gap-4">
               <Link 
                 to="/login" 
-                className="inline-flex items-center gap-3 bg-gray-900 text-white font-semibold px-8 py-4 rounded-xl hover:bg-gray-800 transition-colors group"
+                className="text-slate-600 hover:text-slate-900 font-medium transition-colors"
               >
-                Try VR Preview
-                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                Sign In
+              </Link>
+              <Link 
+                to="/login" 
+                className="px-5 py-2.5 bg-coral-500 hover:bg-coral-600 text-white font-semibold rounded-full transition-colors"
+              >
+                Get Started
               </Link>
             </div>
-            <div className="relative">
-              <div className="relative rounded-3xl overflow-hidden shadow-2xl">
-                <img 
-                  src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80" 
-                  alt="VR Preview" 
-                  className="w-full aspect-[4/3] object-cover"
-                />
-                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                  <button className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform">
-                    <Play size={32} className="text-rose-500 ml-1" fill="currentColor" />
-                  </button>
+
+            {/* Mobile Menu Button */}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-slate-600"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-white border-t border-slate-100 py-4 px-4">
+            <nav className="flex flex-col gap-4">
+              <a href="#destinations" className="text-slate-600 hover:text-coral-500 font-medium">Destinations</a>
+              <a href="#services" className="text-slate-600 hover:text-coral-500 font-medium">Travel Services</a>
+              <a href="#events" className="text-slate-600 hover:text-coral-500 font-medium">Events</a>
+              <a href="#guide" className="text-slate-600 hover:text-coral-500 font-medium">Travel Guide</a>
+              <hr className="border-slate-100" />
+              <Link to="/login" className="text-slate-600 font-medium">Sign In</Link>
+              <Link to="/login" className="px-5 py-2.5 bg-coral-500 text-white font-semibold rounded-full text-center">
+                Get Started
+              </Link>
+            </nav>
+          </div>
+        )}
+      </header>
+
+      {/* MAIN CONTENT */}
+      <main>
+        {/* HERO SECTION */}
+        <section className="relative">
+          <div className="grid lg:grid-cols-3">
+            {/* Hero Image & Content */}
+            <div className="lg:col-span-2 relative min-h-[500px] lg:min-h-[600px]">
+              {/* Background Image */}
+              <div 
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ 
+                  backgroundImage: `url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&q=80')` 
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-slate-900/70 via-slate-900/50 to-transparent" />
+              </div>
+
+              {/* Hero Content */}
+              <div className="relative z-10 flex flex-col justify-center h-full px-8 lg:px-16 py-16">
+                <p className="text-white/80 text-lg mb-2">Explore the wonders of</p>
+                <h1 className="text-5xl md:text-7xl font-bold text-white mb-4">
+                  YOUR WORLD
+                </h1>
+                <p className="text-white/70 text-lg mb-8 max-w-md">
+                  AI-Powered Travel Companion for Seamless Adventures
+                </p>
+
+                {/* Search Box */}
+                <form onSubmit={handleSearch} className="bg-white rounded-2xl p-2 max-w-lg shadow-xl">
+                  <div className="flex items-center">
+                    <div className="flex-1 flex items-center gap-3 px-4">
+                      <Search className="text-slate-400" size={20} />
+                      <input
+                        type="text"
+                        placeholder="Where do you want to go?"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full py-3 outline-none text-slate-800 placeholder-slate-400"
+                      />
+                    </div>
+                    <button 
+                      type="submit"
+                      className="px-6 py-3 bg-coral-500 hover:bg-coral-600 text-white font-semibold rounded-xl flex items-center gap-2 transition-colors"
+                    >
+                      Explore <ArrowRight size={18} />
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            {/* Right Sidebar - Featured Destinations */}
+            <div className="hidden lg:block bg-slate-50 p-6">
+              <h3 className="text-lg font-bold text-slate-800 mb-4">Featured Destinations</h3>
+              
+              {/* Destination Cards Grid */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {FEATURED_DESTINATIONS.slice(0, 4).map((dest, idx) => (
+                  <div 
+                    key={dest.id}
+                    className="relative group cursor-pointer rounded-xl overflow-hidden"
+                    onClick={() => handleVRPreview(dest.id)}
+                  >
+                    <img 
+                      src={dest.image} 
+                      alt={dest.name}
+                      className="w-full h-28 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-2">
+                      <p className="text-[10px] text-coral-300">{dest.location}</p>
+                      <p className="text-xs font-semibold text-white truncate">{dest.name}</p>
+                    </div>
+                    {dest.vrAvailable && (
+                      <div className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Eye size={12} className="text-coral-500" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Carousel Controls */}
+              <div className="flex items-center justify-center gap-2 mb-6">
+                <button 
+                  onClick={prevDestination}
+                  className="p-2 border border-slate-200 rounded-lg hover:bg-white transition-colors"
+                >
+                  <ChevronLeft size={16} className="text-slate-600" />
+                </button>
+                <div className="flex gap-1">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div 
+                      key={i}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        i === currentDestIndex ? 'bg-coral-500' : 'bg-slate-300'
+                      }`}
+                    />
+                  ))}
                 </div>
-                <div className="absolute bottom-4 left-4 right-4 flex gap-2">
-                  <RoomButton label="Living Room" active />
-                  <RoomButton label="Bedroom" />
-                  <RoomButton label="Kitchen" />
-                  <RoomButton label="Terrace" />
-                </div>
+                <button 
+                  onClick={nextDestination}
+                  className="p-2 border border-slate-200 rounded-lg hover:bg-white transition-colors"
+                >
+                  <ChevronRight size={16} className="text-slate-600" />
+                </button>
+              </div>
+
+              {/* Upcoming Events */}
+              <h3 className="text-lg font-bold text-slate-800 mb-4">Upcoming Events</h3>
+              <div className="space-y-3">
+                {UPCOMING_EVENTS.map((event) => (
+                  <div key={event.id} className="group cursor-pointer">
+                    <div className="relative rounded-xl overflow-hidden mb-2">
+                      <img 
+                        src={event.image} 
+                        alt={event.name}
+                        className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <p className="text-xs text-coral-500 font-medium">{event.date}</p>
+                    <p className="text-sm font-semibold text-slate-800 group-hover:text-coral-500 transition-colors">
+                      {event.name}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* FEATURES SECTION */}
-      <section className="py-20">
-        <div className="max-w-[1760px] mx-auto px-6 md:px-10 lg:px-20">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Travel smarter with Roam
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Everything you need for the perfect trip, powered by AI
+        {/* TRAVEL SERVICES SECTION */}
+        <section id="services" className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <h2 className="text-2xl font-bold text-slate-800 mb-8">Travel Services</h2>
+          
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-4 md:gap-8">
+            {TRAVEL_SERVICES.map((service) => (
+              <Link 
+                key={service.id}
+                to={service.link}
+                className="flex flex-col items-center text-center group"
+              >
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-3 group-hover:bg-coral-50 group-hover:border-coral-200 transition-colors">
+                  <service.icon size={28} className="text-slate-600 group-hover:text-coral-500 transition-colors" />
+                </div>
+                <span className="text-xs md:text-sm font-medium text-slate-600 group-hover:text-coral-500 transition-colors">
+                  {service.label}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* VR PREVIEW DESTINATIONS */}
+        <section id="destinations" className="py-12 bg-slate-50">
+          <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-800">Explore in 360° VR</h2>
+                <p className="text-slate-500 mt-1">Preview destinations before you travel</p>
+              </div>
+              <Link 
+                to="/vr-preview"
+                className="hidden md:flex items-center gap-2 text-coral-500 hover:text-coral-600 font-semibold"
+              >
+                View All <ChevronRight size={18} />
+              </Link>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {FEATURED_DESTINATIONS.map((dest) => (
+                <div 
+                  key={dest.id}
+                  className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow group cursor-pointer"
+                  onClick={() => handleVRPreview(dest.id)}
+                >
+                  <div className="relative">
+                    <img 
+                      src={dest.image} 
+                      alt={dest.name}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                        <Play size={24} className="text-coral-500 ml-1" />
+                      </div>
+                    </div>
+                    {dest.vrAvailable && (
+                      <div className="absolute top-3 left-3 px-2 py-1 bg-coral-500 text-white text-xs font-semibold rounded-full flex items-center gap-1">
+                        <Eye size={12} /> 360° VR
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <p className="text-xs text-coral-500 font-medium">{dest.location}</p>
+                    <h3 className="font-bold text-slate-800 mt-1">{dest.name}</h3>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleVRPreview(dest.id);
+                      }}
+                      className="mt-3 w-full py-2 bg-slate-100 hover:bg-coral-500 hover:text-white text-slate-600 font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Eye size={16} /> Preview in VR
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 text-center md:hidden">
+              <Link 
+                to="/vr-preview"
+                className="inline-flex items-center gap-2 text-coral-500 hover:text-coral-600 font-semibold"
+              >
+                View All Destinations <ChevronRight size={18} />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* FEATURES SECTION */}
+        <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-slate-800 mb-4">Your AI Travel Companion</h2>
+            <p className="text-slate-500 max-w-2xl mx-auto">
+              Experience seamless travel with intelligent planning, real-time assistance, and immersive previews.
             </p>
           </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <FeatureCard 
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <FeatureCard
               icon={Eye}
-              title="VR Destination Preview"
-              description="Explore accommodations in 360° VR before booking. Walk through rooms and see exactly what you're getting."
-              color="rose"
+              title="360° VR Previews"
+              description="Explore destinations virtually before booking. Walk through streets, see landmarks, and experience the atmosphere."
+              color="coral"
             />
-            <FeatureCard 
-              icon={Sparkles}
-              title="AI Trip Planning"
-              description="Get personalized itineraries based on your preferences. Our AI creates perfect day-by-day plans."
-              color="violet"
-            />
-            <FeatureCard 
-              icon={MessageSquare}
-              title="24/7 AI Assistant"
-              description="Ask anything about your trip. Get instant answers, translations, and local recommendations."
+            <FeatureCard
+              icon={Plane}
+              title="AI Itinerary Planning"
+              description="Get personalized day-by-day itineraries crafted by AI based on your preferences, pace, and interests."
               color="blue"
             />
-            <FeatureCard 
-              icon={Map}
-              title="Local Guide"
-              description="Discover hidden gems, learn local customs, and avoid tourist traps with AI-powered insights."
+            <FeatureCard
+              icon={Globe}
+              title="24/7 Travel Assistant"
+              description="Ask anything about your destination. Get instant answers about culture, phrases, tips, and local recommendations."
               color="green"
             />
-            <FeatureCard 
-              icon={Shield}
-              title="Emergency Support"
-              description="One-tap access to emergency services, embassy contacts, and location sharing when you need help."
-              color="orange"
-            />
-            <FeatureCard 
-              icon={Globe}
-              title="Language Support"
-              description="Real-time translations, essential phrases, and pronunciation guides in 50+ languages."
-              color="teal"
-            />
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA SECTION */}
-      <section className="py-20 bg-gradient-to-r from-rose-500 to-rose-600">
-        <div className="max-w-[1760px] mx-auto px-6 md:px-10 lg:px-20 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-            Ready to explore?
-          </h2>
-          <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">
-            Join thousands of travelers who've discovered a smarter way to plan their adventures.
-          </p>
-          <Link 
-            to="/login" 
-            className="inline-flex items-center gap-3 bg-white text-rose-600 font-bold px-10 py-5 rounded-xl hover:bg-gray-100 transition-colors group text-lg"
-          >
-            Get Started — It's Free
-            <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
-          </Link>
-        </div>
-      </section>
+        {/* CTA SECTION */}
+        <section className="py-16 bg-gradient-to-r from-coral-500 to-orange-500">
+          <div className="px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Ready to Start Your Journey?
+            </h2>
+            <p className="text-white/80 text-lg mb-8 max-w-2xl mx-auto">
+              Join thousands of travelers who plan smarter with AI-powered assistance.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link 
+                to="/login"
+                className="px-8 py-4 bg-white text-coral-500 font-bold rounded-full hover:bg-slate-100 transition-colors flex items-center gap-2"
+              >
+                Get Started Free <ArrowRight size={18} />
+              </Link>
+              <Link 
+                to="/vr-preview"
+                className="px-8 py-4 bg-white/20 text-white font-bold rounded-full hover:bg-white/30 transition-colors flex items-center gap-2 border border-white/30"
+              >
+                <Eye size={18} /> Try VR Preview
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
 
       {/* FOOTER */}
-      <footer className="bg-gray-100 border-t border-gray-200">
-        <div className="max-w-[1760px] mx-auto px-6 md:px-10 lg:px-20 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+      <footer className="bg-slate-900 text-white py-12">
+        <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h4 className="font-bold text-gray-900 mb-4">Support</h4>
-              <ul className="space-y-3 text-gray-600 text-sm">
-                <li><a href="#" className="hover:underline">Help Center</a></li>
-                <li><a href="#" className="hover:underline">Safety information</a></li>
-                <li><a href="#" className="hover:underline">Cancellation options</a></li>
+              <div className="text-2xl font-bold mb-4">
+                <span className="text-coral-400">ROAM</span>
+              </div>
+              <p className="text-slate-400 text-sm">
+                Your AI-powered travel companion for seamless adventures around the world.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Explore</h4>
+              <ul className="space-y-2 text-sm text-slate-400">
+                <li><a href="#destinations" className="hover:text-white transition-colors">Destinations</a></li>
+                <li><Link to="/vr-preview" className="hover:text-white transition-colors">VR Previews</Link></li>
+                <li><a href="#events" className="hover:text-white transition-colors">Events</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-gray-900 mb-4">Community</h4>
-              <ul className="space-y-3 text-gray-600 text-sm">
-                <li><a href="#" className="hover:underline">Blog</a></li>
-                <li><a href="#" className="hover:underline">Travel guides</a></li>
-                <li><a href="#" className="hover:underline">Ambassador program</a></li>
+              <h4 className="font-semibold mb-4">Services</h4>
+              <ul className="space-y-2 text-sm text-slate-400">
+                <li><a href="#" className="hover:text-white transition-colors">AI Planning</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Travel Assistant</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Local Guide</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold text-gray-900 mb-4">Hosting</h4>
-              <ul className="space-y-3 text-gray-600 text-sm">
-                <li><a href="#" className="hover:underline">Host your home</a></li>
-                <li><a href="#" className="hover:underline">Host an experience</a></li>
-                <li><a href="#" className="hover:underline">Resources</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold text-gray-900 mb-4">Roam</h4>
-              <ul className="space-y-3 text-gray-600 text-sm">
-                <li><a href="#" className="hover:underline">About us</a></li>
-                <li><a href="#" className="hover:underline">Careers</a></li>
-                <li><a href="#" className="hover:underline">Press</a></li>
+              <h4 className="font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-sm text-slate-400">
+                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Emergency</a></li>
               </ul>
             </div>
           </div>
-          
-          <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-gray-300">
-            <div className="flex items-center gap-3 mb-4 md:mb-0">
-              <img src="/logo.png" alt="Roam" className="h-6 w-auto" onError={(e) => e.target.style.display = 'none'} />
-              <span className="text-xl font-bold text-rose-500">Roam</span>
-            </div>
-            <p className="text-gray-500 text-sm">
-              © 2026 Roam. Built for TBO Hackathon. All rights reserved.
-            </p>
+          <div className="border-t border-slate-800 pt-8 text-center text-sm text-slate-500">
+            © 2026 Roam Inc. All rights reserved.
           </div>
         </div>
       </footer>
@@ -493,90 +482,31 @@ export default function Landing() {
   );
 }
 
-// Helper Components
-function FeaturePill({ icon: Icon, text }) {
+function NavLink({ href, children }) {
   return (
-    <div className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-full text-sm font-medium text-gray-700 shadow-sm">
-      <Icon size={16} className="text-rose-500" />
-      {text}
-    </div>
-  );
-}
-
-function RoomButton({ label, active }) {
-  return (
-    <button className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-      active 
-        ? 'bg-white text-gray-900 shadow-md' 
-        : 'bg-black/40 text-white backdrop-blur-sm hover:bg-black/60'
-    }`}>
-      {label}
-    </button>
+    <a 
+      href={href}
+      className="text-slate-600 hover:text-coral-500 font-medium transition-colors"
+    >
+      {children}
+    </a>
   );
 }
 
 function FeatureCard({ icon: Icon, title, description, color }) {
   const colorClasses = {
-    rose: 'bg-rose-50 text-rose-600',
-    violet: 'bg-violet-50 text-violet-600',
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    orange: 'bg-orange-50 text-orange-600',
-    teal: 'bg-teal-50 text-teal-600',
-    purple: 'bg-purple-50 text-purple-600',
-    red: 'bg-red-50 text-red-600',
-    indigo: 'bg-indigo-50 text-indigo-600',
-    pink: 'bg-pink-50 text-pink-600',
-    yellow: 'bg-yellow-50 text-yellow-600',
+    coral: 'bg-coral-50 text-coral-500',
+    blue: 'bg-blue-50 text-blue-500',
+    green: 'bg-green-50 text-green-500',
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-lg transition-shadow">
-      <div className={`w-14 h-14 rounded-2xl ${colorClasses[color] || colorClasses.rose} flex items-center justify-center mb-5`}>
+    <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:shadow-lg transition-shadow">
+      <div className={`w-14 h-14 ${colorClasses[color]} rounded-2xl flex items-center justify-center mb-4`}>
         <Icon size={28} />
       </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-3">{title}</h3>
-      <p className="text-gray-600 leading-relaxed">{description}</p>
-    </div>
-  );
-}
-
-function StepCard({ number, title, description, icon: Icon }) {
-  return (
-    <div className="relative text-center">
-      <div className="w-20 h-20 bg-gradient-to-br from-rose-400 to-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-rose-500/30 relative z-10">
-        <span className="text-3xl font-bold text-white">{number}</span>
-      </div>
-      <h3 className="text-xl font-bold text-gray-800 mb-3">{title}</h3>
-      <p className="text-gray-500">{description}</p>
-    </div>
-  );
-}
-
-function JourneyCard({ phase, title, features, color }) {
-  const colorClasses = {
-    blue: 'from-blue-500 to-blue-600',
-    teal: 'from-rose-500 to-rose-600',
-    green: 'from-green-500 to-green-600',
-    red: 'from-red-500 to-red-600',
-  };
-
-  return (
-    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all">
-      <div className={`bg-gradient-to-r ${colorClasses[color]} px-6 py-4`}>
-        <span className="text-xs font-bold text-white/80 uppercase tracking-wider">{phase}</span>
-        <h3 className="text-lg font-bold text-white">{title}</h3>
-      </div>
-      <div className="p-6">
-        <ul className="space-y-3">
-          {features.map((feature, idx) => (
-            <li key={idx} className="flex items-center gap-3 text-sm text-gray-600">
-              <CheckCircle size={16} className="text-rose-500 shrink-0" />
-              {feature}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <h3 className="text-xl font-bold text-slate-800 mb-2">{title}</h3>
+      <p className="text-slate-500">{description}</p>
     </div>
   );
 }

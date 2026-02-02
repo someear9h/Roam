@@ -118,7 +118,7 @@ export default function Assistant() {
       <header className="flex-none bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="relative">
-            <div className="w-12 h-12 bg-gradient-to-br from-rose-400 to-rose-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-500/25">
+            <div className="w-12 h-12 bg-gradient-to-br from-coral-400 to-coral-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-coral-500/25">
               <Bot size={24} />
             </div>
             <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></span>
@@ -136,7 +136,7 @@ export default function Assistant() {
               {currentTrip && (
                 <>
                   <span className="text-gray-300">•</span>
-                  <span className="text-sm text-rose-500 font-medium">{currentTrip.destination}</span>
+                  <span className="text-sm text-coral-500 font-medium">{currentTrip.destination}</span>
                 </>
               )}
             </div>
@@ -170,15 +170,15 @@ export default function Assistant() {
         {/* Typing Indicator */}
         {isLoading && (
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center text-white shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-coral-400 to-coral-600 flex items-center justify-center text-white shrink-0">
               <Bot size={18} />
             </div>
             <div className="px-5 py-4 rounded-2xl rounded-tl-none bg-white border border-gray-200 shadow-sm">
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></span>
-                  <span className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></span>
-                  <span className="w-2 h-2 bg-rose-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></span>
+                  <span className="w-2 h-2 bg-coral-400 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></span>
+                  <span className="w-2 h-2 bg-coral-400 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></span>
+                  <span className="w-2 h-2 bg-coral-400 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></span>
                 </div>
                 <span className="text-sm text-gray-500">Thinking...</span>
               </div>
@@ -198,7 +198,7 @@ export default function Assistant() {
               <button
                 key={idx}
                 onClick={() => handleQuickPrompt(prompt.prompt)}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full text-sm text-gray-600 hover:border-rose-300 hover:text-rose-600 hover:bg-rose-50 transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full text-sm text-gray-600 hover:border-coral-300 hover:text-coral-600 hover:bg-coral-50 transition-all"
               >
                 <prompt.icon size={16} />
                 {prompt.label}
@@ -224,14 +224,14 @@ export default function Assistant() {
               }}
               placeholder="Ask me anything about your trip..."
               rows={1}
-              className="w-full px-5 py-4 pr-12 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent resize-none text-gray-700 placeholder-gray-400 transition-all"
+              className="w-full px-5 py-4 pr-12 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-coral-500 focus:border-transparent resize-none text-gray-700 placeholder-gray-400 transition-all"
               style={{ minHeight: '56px', maxHeight: '120px' }}
             />
           </div>
           <button 
             onClick={() => handleSend()}
             disabled={isLoading || !inputText.trim()}
-            className="p-4 bg-gradient-to-r from-rose-500 to-rose-600 text-white rounded-2xl hover:from-rose-600 hover:to-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-rose-500/25"
+            className="p-4 bg-gradient-to-r from-coral-500 to-coral-600 text-white rounded-2xl hover:from-coral-600 hover:to-coral-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-coral-500/25"
           >
             {isLoading ? (
               <Loader2 size={22} className="animate-spin" />
@@ -257,7 +257,7 @@ function MessageBubble({ message, userName }) {
       <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
         isUser 
           ? 'bg-gray-700 text-white' 
-          : 'bg-gradient-to-br from-rose-400 to-rose-600 text-white shadow-lg shadow-rose-500/25'
+          : 'bg-gradient-to-br from-coral-400 to-coral-600 text-white shadow-lg shadow-coral-500/25'
       }`}>
         {isUser ? <User size={18} /> : <Bot size={18} />}
       </div>
