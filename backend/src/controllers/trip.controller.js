@@ -12,6 +12,29 @@ exports.getTrips = async (req, res) => {
   res.json({ success: true, data: trips });
 };
 
+exports.getTrip = async (req, res) => {
+  const tripId = Number(req.params.tripId);
+  if (isNaN(tripId)) {
+    return res.status(400).json({ success: false, error: 'Invalid tripId (must be number)' });
+  }
+
+  const trip = await prisma.trip.findUnique({
+    where: { id: tripId },
+    include: { itinerary: true }
+  });
+
+  if (!trip) {
+    return res.status(404).json({ success: false, error: 'Trip not found' });
+  }
+
+  // Verify ownership
+  if (trip.user_id !== req.user.userId) {
+    return res.status(403).json({ success: false, error: 'Not authorized to access this trip' });
+  }
+
+  res.json({ success: true, data: trip });
+};
+
 exports.createTrip = async (req, res) => {
   const result = createTripSchema.safeParse(req.body);
   if (!result.success) {

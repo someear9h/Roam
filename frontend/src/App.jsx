@@ -1,8 +1,8 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useLocation, Navigate, useParams } from 'react-router-dom';
 import { 
   Home, Map, MessageSquare, ShieldAlert, Globe, LogOut, Eye,
-  Search, Menu, User
+  Search, Menu, User, ArrowLeft
 } from 'lucide-react';
 
 // --- CONTEXT ---
@@ -18,17 +18,31 @@ import Emergency from './pages/Emergency';
 import LocalGuide from './pages/LocalGuide';
 import Onboarding from './pages/Onboarding';
 import TravelReadiness from './pages/TravelReadiness';
+import TripSummary from './pages/TripSummary';
 import VRPreview from './pages/VRPreview';
 
 // --- NAVBAR COMPONENT (Enhanced Style) ---
 const Navbar = () => {
   const location = useLocation();
   const { isAuthenticated, logout, user } = useAuth();
-  const isActive = (path) => location.pathname === path;
+  
+  // Extract tripId from URL if present
+  const tripIdMatch = location.pathname.match(/\/trip\/(\d+)/);
+  const tripId = tripIdMatch ? tripIdMatch[1] : null;
+  
+  const isActive = (path) => {
+    if (tripId) {
+      // For trip-specific pages, match the feature part
+      return location.pathname.includes(path.replace('/trip/:tripId', `/trip/${tripId}`));
+    }
+    return location.pathname === path;
+  };
+  
+  const isTripPage = !!tripId;
 
   // Hide Navbar on these pages
   const hideNavPaths = ['/', '/login', '/onboarding', '/vr-preview'];
-  const hideNavOnVR = location.pathname.includes('/vr');
+  const hideNavOnVR = location.pathname.includes('/vr') && !location.pathname.includes('/vr-preview');
   if (hideNavPaths.includes(location.pathname) || hideNavOnVR) return null;
   if (!isAuthenticated) return null;
 
@@ -37,27 +51,46 @@ const Navbar = () => {
       {/* DESKTOP NAV - Enhanced Style */}
       <nav className="hidden md:flex fixed top-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-200 z-50 h-20 items-center justify-between px-6 lg:px-10">
         
-        {/* LEFT: LOGO */}
-        <Link to="/dashboard" className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center">
-            <Globe size={22} className="text-white" />
+        {/* LEFT: LOGO or BACK */}
+        {isTripPage ? (
+          <div className="flex items-center gap-3">
+            <Link to="/dashboard" className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+              <ArrowLeft size={20} className="text-slate-600" />
+            </Link>
+            <Link to={`/trip/${tripId}`} className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center">
+                <Map size={22} className="text-white" />
+              </div>
+              <span className="text-lg font-bold text-slate-800">Trip Details</span>
+            </Link>
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Roam</span>
-        </Link>
+        ) : (
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <img src="/logo2.png" alt="Roam" className="h-12 w-auto" />
+          </Link>
+        )}
 
-        {/* CENTER: NAV PILLS */}
+        {/* CENTER: NAV PILLS - Context aware */}
         <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-full">
-          <NavLink to="/dashboard" label="Dashboard" icon={Home} active={isActive('/dashboard')} />
-          <NavLink to="/itinerary" label="Itinerary" icon={Map} active={isActive('/itinerary')} />
-          <NavLink to="/assistant" label="Assistant" icon={MessageSquare} active={isActive('/assistant')} />
-          <NavLink to="/local-guide" label="Guide" icon={Globe} active={isActive('/local-guide')} />
-          <NavLink to="/vr-preview" label="VR Tour" icon={Eye} active={isActive('/vr-preview')} />
+          {isTripPage ? (
+            <>
+              <NavLink to={`/trip/${tripId}`} label="Overview" icon={Home} active={location.pathname === `/trip/${tripId}`} />
+              <NavLink to={`/trip/${tripId}/itinerary`} label="Itinerary" icon={Map} active={location.pathname.includes('/itinerary')} />
+              <NavLink to={`/trip/${tripId}/assistant`} label="Assistant" icon={MessageSquare} active={location.pathname.includes('/assistant')} />
+              <NavLink to={`/trip/${tripId}/local-guide`} label="Guide" icon={Globe} active={location.pathname.includes('/local-guide')} />
+            </>
+          ) : (
+            <>
+              <NavLink to="/dashboard" label="Dashboard" icon={Home} active={isActive('/dashboard')} />
+              <NavLink to="/vr-preview" label="VR Tour" icon={Eye} active={isActive('/vr-preview')} />
+            </>
+          )}
         </div>
 
         {/* RIGHT: ACTIONS */}
         <div className="flex items-center gap-3">
           <Link 
-            to="/emergency" 
+            to={isTripPage ? `/trip/${tripId}/emergency` : '/emergency'} 
             className="flex items-center gap-2 text-red-600 font-semibold text-sm bg-red-50 px-4 py-2.5 rounded-full border border-red-100 hover:bg-red-100 transition-colors"
           >
             <ShieldAlert size={18} />
@@ -87,15 +120,27 @@ const Navbar = () => {
 
       {/* MOBILE NAV - Enhanced Style */}
       <nav className="md:hidden fixed bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-slate-200 py-2 px-2 flex justify-around items-center z-50 pb-safe">
-        <MobileNavLink to="/dashboard" icon={Home} label="Home" active={isActive('/dashboard')} />
-        <MobileNavLink to="/itinerary" icon={Map} label="Trips" active={isActive('/itinerary')} />
-        <MobileNavLink to="/vr-preview" icon={Eye} label="VR" active={isActive('/vr-preview')} />
-        <MobileNavLink to="/assistant" icon={MessageSquare} label="Chat" active={isActive('/assistant')} />
-        <MobileNavLink to="/local-guide" icon={Globe} label="Guide" active={isActive('/local-guide')} />
-        <Link to="/emergency" className="flex flex-col items-center justify-center text-red-500">
-          <ShieldAlert size={22} />
-          <span className="text-[10px] font-semibold mt-0.5">SOS</span>
-        </Link>
+        {isTripPage ? (
+          <>
+            <MobileNavLink to={`/trip/${tripId}`} icon={Home} label="Trip" active={location.pathname === `/trip/${tripId}`} />
+            <MobileNavLink to={`/trip/${tripId}/itinerary`} icon={Map} label="Plan" active={location.pathname.includes('/itinerary')} />
+            <MobileNavLink to={`/trip/${tripId}/assistant`} icon={MessageSquare} label="Chat" active={location.pathname.includes('/assistant')} />
+            <MobileNavLink to={`/trip/${tripId}/local-guide`} icon={Globe} label="Guide" active={location.pathname.includes('/local-guide')} />
+            <Link to={`/trip/${tripId}/emergency`} className="flex flex-col items-center justify-center text-red-500">
+              <ShieldAlert size={22} />
+              <span className="text-[10px] font-semibold mt-0.5">SOS</span>
+            </Link>
+          </>
+        ) : (
+          <>
+            <MobileNavLink to="/dashboard" icon={Home} label="Home" active={isActive('/dashboard')} />
+            <MobileNavLink to="/vr-preview" icon={Eye} label="VR" active={isActive('/vr-preview')} />
+            <Link to="/emergency" className="flex flex-col items-center justify-center text-red-500">
+              <ShieldAlert size={22} />
+              <span className="text-[10px] font-semibold mt-0.5">SOS</span>
+            </Link>
+          </>
+        )}
       </nav>
     </>
   );
@@ -175,13 +220,20 @@ function Layout() {
           <Route path="/login" element={<Login />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/itinerary" element={<Itinerary />} />
-          <Route path="/assistant" element={<Assistant />} />
-          <Route path="/emergency" element={<Emergency />} />
-          <Route path="/local-guide" element={<LocalGuide />} />
+          
+          {/* Trip-specific routes */}
+          <Route path="/trip/:tripId" element={<TripSummary />} />
+          <Route path="/trip/:tripId/itinerary" element={<Itinerary />} />
+          <Route path="/trip/:tripId/assistant" element={<Assistant />} />
+          <Route path="/trip/:tripId/local-guide" element={<LocalGuide />} />
+          <Route path="/trip/:tripId/emergency" element={<Emergency />} />
           <Route path="/trip/:tripId/readiness" element={<TravelReadiness />} />
-          <Route path="/vr-preview" element={<VRPreview />} />
           <Route path="/trip/:tripId/vr" element={<VRPreview />} />
+          
+          {/* Global routes */}
+          <Route path="/emergency" element={<Emergency />} />
+          <Route path="/vr-preview" element={<VRPreview />} />
+          
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

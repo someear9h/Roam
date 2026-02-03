@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { 
   Bot, Send, User, Sparkles, Map, Utensils, Languages, 
   Plane, Hotel, Camera, Shield, Clock, ThumbsUp, ThumbsDown,
@@ -17,10 +18,11 @@ const QUICK_PROMPTS = [
 ];
 
 export default function Assistant() {
+  const { tripId: urlTripId } = useParams();
   const { user } = useAuth();
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [tripId, setTripId] = useState(null);
+  const [tripId, setTripId] = useState(urlTripId || null);
   const [currentTrip, setCurrentTrip] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -36,14 +38,16 @@ export default function Assistant() {
 
   useEffect(() => {
     loadTrip();
-  }, []);
+  }, [urlTripId]);
 
   const loadTrip = async () => {
     try {
-      const res = await tripAPI.getTrips();
-      if (res.data.success && res.data.data.length > 0) {
-        setTripId(res.data.data[0].id);
-        setCurrentTrip(res.data.data[0]);
+      if (urlTripId) {
+        const res = await tripAPI.getTrip(urlTripId);
+        if (res.data.success && res.data.data) {
+          setTripId(res.data.data.id);
+          setCurrentTrip(res.data.data);
+        }
       }
     } catch (e) {
       console.error('Failed to load trip');

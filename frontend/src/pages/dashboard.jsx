@@ -308,10 +308,19 @@ export default function Dashboard() {
           <div className="bg-white rounded-2xl border border-slate-200 p-6">
             <h3 className="font-bold text-slate-800 mb-4">Quick Actions</h3>
             <div className="space-y-3">
-              <QuickAction to="/assistant" icon={MessageSquare} label="AI Assistant" color="blue" />
-              <QuickAction to="/local-guide" icon={Compass} label="Local Guide" color="green" />
-              <QuickAction to="/vr-preview" icon={Eye} label="VR Preview" color="purple" />
-              <QuickAction to="/emergency" icon={Shield} label="Emergency SOS" color="red" />
+              {selectedTrip ? (
+                <>
+                  <QuickAction to={`/trip/${selectedTrip.id}/assistant`} icon={MessageSquare} label="AI Assistant" color="blue" />
+                  <QuickAction to={`/trip/${selectedTrip.id}/local-guide`} icon={Compass} label="Local Guide" color="green" />
+                  <QuickAction to="/vr-preview" icon={Eye} label="VR Preview" color="purple" />
+                  <QuickAction to={`/trip/${selectedTrip.id}/emergency`} icon={Shield} label="Emergency SOS" color="red" />
+                </>
+              ) : (
+                <>
+                  <QuickAction to="/vr-preview" icon={Eye} label="VR Preview" color="purple" />
+                  <QuickAction to="/emergency" icon={Shield} label="Emergency SOS" color="red" />
+                </>
+              )}
             </div>
           </div>
 
@@ -493,7 +502,7 @@ function TripHighlightCard({ trip, isActive }) {
         </div>
 
         <div className="flex gap-3">
-          <Link to="/itinerary" className="flex-1 py-3 bg-white text-slate-800 font-semibold rounded-xl text-center hover:bg-slate-100 transition-colors">
+          <Link to={`/trip/${trip.id}/itinerary`} className="flex-1 py-3 bg-white text-slate-800 font-semibold rounded-xl text-center hover:bg-slate-100 transition-colors">
             View Itinerary
           </Link>
           <Link to={`/vr-preview?destination=${trip.destination}`} className="px-4 py-3 bg-white/20 text-white font-semibold rounded-xl hover:bg-white/30 transition-colors flex items-center gap-2">
@@ -514,7 +523,7 @@ function TripCard({ trip }) {
   };
 
   return (
-    <Link to="/itinerary" className="bg-white rounded-2xl border border-slate-200 p-4 hover:shadow-lg hover:border-orange-200 transition-all group">
+    <Link to={`/trip/${trip.id}`} className="bg-white rounded-2xl border border-slate-200 p-4 hover:shadow-lg hover:border-orange-200 transition-all group">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-amber-500 rounded-xl flex items-center justify-center text-white">

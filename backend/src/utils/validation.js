@@ -42,8 +42,9 @@ exports.localGuideSchema = z.object({
   tripId: z.number({ message: 'tripId must be a number' }),
   query: z.string().min(1, { message: 'Query is required' }),
   location: z.object({
-    lat: z.number().optional(),
-    lng: z.number().optional(),
+    lat: z.number().nullable().optional(),
+    lng: z.number().nullable().optional(),
+    city: z.string().optional(),
   }).optional(),
 });
 

@@ -169,18 +169,23 @@ exports.localGuide = async (req, res) => {
   }
   const { tripId, query, location } = result.data;
 
-  const context = await getFullContext(tripId, req.user.userId);
-  const destData = await prisma.destination.findUnique({ where: { name: context.trip.destination } });
-  context.destData = destData;
+  try {
+    const context = await getFullContext(tripId, req.user.userId);
+    const destData = await prisma.destination.findUnique({ where: { name: context.trip.destination } });
+    context.destData = destData;
 
-  const prompt = gemini.buildPrompt(
-    'Provide on-ground guidance: nearby essentials, scam warnings, cultural norms, transport.',
-    context,
-    query + ` Location: ${JSON.stringify(location)}`
-  );
-  const responseText = await gemini.generateContent(prompt);
+    const prompt = gemini.buildPrompt(
+      'Provide on-ground guidance: nearby essentials, scam warnings, cultural norms, transport.',
+      context,
+      query + ` Location: ${JSON.stringify(location)}`
+    );
+    const responseText = await gemini.generateContent(prompt);
 
-  res.json({ success: true, data: { response: responseText } });
+    res.json({ success: true, data: { response: responseText } });
+  } catch (error) {
+    console.error('Local guide error:', error.message);
+    res.status(500).json({ success: false, error: error.message || 'Failed to get recommendations' });
+  }
 };
 
 

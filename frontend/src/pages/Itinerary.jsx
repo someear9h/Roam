@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { 
   MapPin, RefreshCw, ChevronRight, ChevronDown, Clock, Sparkles,
   Calendar, Sun, Moon, Sunrise, Coffee, Utensils, Camera, 
@@ -26,6 +27,7 @@ const TIME_ICONS = {
 };
 
 export default function Itinerary() {
+  const { tripId } = useParams();
   const [activeDay, setActiveDay] = useState(1);
   const [itinerary, setItinerary] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,29 +38,33 @@ export default function Itinerary() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [tripId]);
 
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const tripsRes = await tripAPI.getTrips();
-      if (tripsRes.data.success && tripsRes.data.data.length > 0) {
-        const trip = tripsRes.data.data[0];
-        setCurrentTrip(trip);
-        
-        try {
-          const itineraryRes = await aiAPI.getItinerary(trip.id);
-          if (itineraryRes.data.success && itineraryRes.data.data) {
-            setItinerary(itineraryRes.data.data);
-          }
-        } catch (e) {}
+      
+      // Load specific trip by ID from URL params
+      if (tripId) {
+        const tripRes = await tripAPI.getTrip(tripId);
+        if (tripRes.data.success && tripRes.data.data) {
+          const trip = tripRes.data.data;
+          setCurrentTrip(trip);
+          
+          try {
+            const itineraryRes = await aiAPI.getItinerary(trip.id);
+            if (itineraryRes.data.success && itineraryRes.data.data) {
+              setItinerary(itineraryRes.data.data);
+            }
+          } catch (e) {}
 
-        try {
-          const prefsRes = await preferencesAPI.getPreferences();
-          if (prefsRes.data.success) {
-            setPreferences(prefsRes.data.data);
-          }
-        } catch (e) {}
+          try {
+            const prefsRes = await preferencesAPI.getPreferences();
+            if (prefsRes.data.success) {
+              setPreferences(prefsRes.data.data);
+            }
+          } catch (e) {}
+        }
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -124,9 +130,9 @@ export default function Itinerary() {
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-3">No Trip Selected</h2>
           <p className="text-gray-500 mb-6">Create a trip first to generate your personalized itinerary.</p>
-          <a href="/dashboard" className="inline-flex items-center gap-2 px-6 py-3 bg-coral-500 text-white font-semibold rounded-xl hover:bg-coral-600 transition-colors">
+          <Link to="/dashboard" className="inline-flex items-center gap-2 px-6 py-3 bg-coral-500 text-white font-semibold rounded-xl hover:bg-coral-600 transition-colors">
             Go to Dashboard <ArrowRight size={18} />
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -138,9 +144,11 @@ export default function Itinerary() {
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-            <a href="/dashboard" className="hover:text-coral-500">Dashboard</a>
+            <Link to="/dashboard" className="hover:text-coral-500">Dashboard</Link>
             <ChevronRight size={14} />
-            <span className="font-semibold text-gray-800">{currentTrip.destination}</span>
+            <Link to={`/trip/${tripId}`} className="hover:text-coral-500">{currentTrip.destination}</Link>
+            <ChevronRight size={14} />
+            <span className="font-semibold text-gray-800">Itinerary</span>
           </div>
           <h1 className="text-4xl font-bold text-gray-900">Smart Itinerary</h1>
           <p className="text-gray-500 mt-1">AI-powered day-by-day travel plan</p>

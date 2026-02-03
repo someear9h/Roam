@@ -48,6 +48,7 @@ export const authAPI = {
 // TRIP ENDPOINTS
 export const tripAPI = {
   getTrips: () => api.get('/trips'),
+  getTrip: (tripId) => api.get(`/trips/${tripId}`),
   createTrip: (data) => api.post('/trips/create', data),
   getTripContext: (tripId) => api.get(`/trips/${tripId}/context`),
   getTravelReadiness: (tripId) => api.get(`/trips/${tripId}/readiness`),

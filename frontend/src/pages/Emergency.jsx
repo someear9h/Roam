@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { 
   Phone, MapPin, Share2, Shield, Navigation, Siren, Ambulance, 
   Headphones, MessageCircle, FileText, AlertTriangle, Languages, 
@@ -8,12 +9,13 @@ import {
 import { emergencyAPI, tripAPI } from '../services/api';
 
 export default function Emergency() {
+  const { tripId: urlTripId } = useParams();
   const [isSharing, setIsSharing] = useState(false);
   const [location, setLocation] = useState({ city: 'Detecting...', country: '', lat: null, lng: null });
   const [issueText, setIssueText] = useState('');
   const [isLoadingHelp, setIsLoadingHelp] = useState(false);
   const [aiHelp, setAiHelp] = useState(null);
-  const [tripId, setTripId] = useState(null);
+  const [tripId, setTripId] = useState(urlTripId || null);
   const [currentTrip, setCurrentTrip] = useState(null);
   const [copiedNumber, setCopiedNumber] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -21,14 +23,16 @@ export default function Emergency() {
   useEffect(() => {
     loadTrip();
     detectLocation();
-  }, []);
+  }, [urlTripId]);
 
   const loadTrip = async () => {
     try {
-      const res = await tripAPI.getTrips();
-      if (res.data.success && res.data.data.length > 0) {
-        setTripId(res.data.data[0].id);
-        setCurrentTrip(res.data.data[0]);
+      if (urlTripId) {
+        const res = await tripAPI.getTrip(urlTripId);
+        if (res.data.success && res.data.data) {
+          setTripId(res.data.data.id);
+          setCurrentTrip(res.data.data);
+        }
       }
     } catch (e) {}
   };

@@ -196,7 +196,7 @@ export default function TravelReadiness() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <Link to="/dashboard" className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+          <Link to={`/trip/${tripId}`} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
             <ArrowLeft size={24} className="text-slate-600" />
           </Link>
           <div>

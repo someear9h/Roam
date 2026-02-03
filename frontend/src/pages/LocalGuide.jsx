@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { 
   Search, MapPin, Coffee, Utensils, AlertTriangle, Navigation, 
   Loader2, Send, Star, Clock, DollarSign, Languages, BookOpen,
@@ -6,7 +7,6 @@ import {
   Users, ThumbsUp, ExternalLink, ChevronRight, Sparkles, Globe,
   ArrowLeft
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { aiAPI, tripAPI } from '../services/api';
 
 const CATEGORIES = [
@@ -28,25 +28,28 @@ const QUICK_QUERIES = [
 ];
 
 export default function LocalGuide() {
+  const { tripId: urlTripId } = useParams();
   const [activeCategory, setActiveCategory] = useState('food');
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [aiResponse, setAiResponse] = useState(null);
-  const [tripId, setTripId] = useState(null);
+  const [tripId, setTripId] = useState(urlTripId || null);
   const [currentTrip, setCurrentTrip] = useState(null);
   const [userLocation, setUserLocation] = useState({ lat: null, lng: null, city: 'your destination' });
 
   useEffect(() => {
     loadTrip();
     getLocation();
-  }, []);
+  }, [urlTripId]);
 
   const loadTrip = async () => {
     try {
-      const res = await tripAPI.getTrips();
-      if (res.data.success && res.data.data.length > 0) {
-        setTripId(res.data.data[0].id);
-        setCurrentTrip(res.data.data[0]);
+      if (urlTripId) {
+        const res = await tripAPI.getTrip(urlTripId);
+        if (res.data.success && res.data.data) {
+          setTripId(res.data.data.id);
+          setCurrentTrip(res.data.data);
+        }
       }
     } catch (e) {}
   };
@@ -81,17 +84,23 @@ export default function LocalGuide() {
 
     try {
       const response = await aiAPI.localGuide({
-        tripId: tripId || 1,
+        tripId: Number(tripId) || 1,
         query: searchQuery,
         location: userLocation
       });
 
       if (response.data.success) {
         setAiResponse(response.data.data.response);
+      } else {
+        setAiResponse('Unable to get recommendations right now. Please try again.');
       }
     } catch (error) {
       console.error('Failed to get local guide response:', error);
-      setAiResponse('Unable to get recommendations right now. Please try again.');
+      const errorData = error.response?.data?.error;
+      const errorMessage = typeof errorData === 'string' 
+        ? errorData 
+        : 'Unable to get recommendations right now. Please try again.';
+      setAiResponse(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +125,7 @@ export default function LocalGuide() {
     <div className="space-y-6 pb-24">
       {/* HEADER - Airbnb Style */}
       <div className="flex items-center gap-4 mb-2">
-        <Link to="/dashboard" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+        <Link to={urlTripId ? `/trip/${urlTripId}` : '/dashboard'} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
           <ArrowLeft size={20} className="text-gray-600" />
         </Link>
         <div>

@@ -5,6 +5,7 @@ const authMiddleware = require('../middlewares/auth.middleware');
 
 router.get('/', authMiddleware, tripController.getTrips);
 router.post('/create', authMiddleware, tripController.createTrip);
+router.get('/:tripId', authMiddleware, tripController.getTrip);
 router.get('/:tripId/context', authMiddleware, tripController.getTripContext);
 router.get('/:tripId/readiness', authMiddleware, tripController.getTravelReadiness);
 router.put('/:tripId/status', authMiddleware, tripController.updateTripStatus);
