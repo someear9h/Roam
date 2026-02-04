@@ -71,6 +71,8 @@ export const aiAPI = {
   getItinerary: (tripId) => api.get(`/ai/itinerary/${tripId}`),
   localGuide: (data) => api.post('/ai/local-guide', data),
   vrExplain: (data) => api.post('/ai/vr-explain', data),
+  getChatHistory: (tripId) => api.get(`/ai/chat-history/${tripId}`),
+  clearChatHistory: (tripId) => api.delete(`/ai/chat-history/${tripId}`),
 };
 
 // ALERTS ENDPOINTS

@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation, Navigate, useParams } from 'react-router-dom';
 import { 
   Home, Map, MessageSquare, ShieldAlert, Globe, LogOut, Eye,
-  Search, Menu, User, ArrowLeft
+  Search, Menu, User, ArrowLeft, Star
 } from 'lucide-react';
 
 // --- CONTEXT ---
@@ -20,6 +20,7 @@ import Onboarding from './pages/Onboarding';
 import TravelReadiness from './pages/TravelReadiness';
 import TripSummary from './pages/TripSummary';
 import VRPreview from './pages/VRPreview';
+import PlaceReviewsPage from './pages/PlaceReviewsPage';
 
 // --- NAVBAR COMPONENT (Enhanced Style) ---
 const Navbar = () => {
@@ -76,6 +77,7 @@ const Navbar = () => {
             <>
               <NavLink to={`/trip/${tripId}`} label="Overview" icon={Home} active={location.pathname === `/trip/${tripId}`} />
               <NavLink to={`/trip/${tripId}/itinerary`} label="Itinerary" icon={Map} active={location.pathname.includes('/itinerary')} />
+              <NavLink to={`/trip/${tripId}/reviews`} label="Reviews" icon={Star} active={location.pathname.includes('/reviews')} />
               <NavLink to={`/trip/${tripId}/assistant`} label="Assistant" icon={MessageSquare} active={location.pathname.includes('/assistant')} />
               <NavLink to={`/trip/${tripId}/local-guide`} label="Guide" icon={Globe} active={location.pathname.includes('/local-guide')} />
             </>
@@ -124,8 +126,8 @@ const Navbar = () => {
           <>
             <MobileNavLink to={`/trip/${tripId}`} icon={Home} label="Trip" active={location.pathname === `/trip/${tripId}`} />
             <MobileNavLink to={`/trip/${tripId}/itinerary`} icon={Map} label="Plan" active={location.pathname.includes('/itinerary')} />
+            <MobileNavLink to={`/trip/${tripId}/reviews`} icon={Star} label="Reviews" active={location.pathname.includes('/reviews')} />
             <MobileNavLink to={`/trip/${tripId}/assistant`} icon={MessageSquare} label="Chat" active={location.pathname.includes('/assistant')} />
-            <MobileNavLink to={`/trip/${tripId}/local-guide`} icon={Globe} label="Guide" active={location.pathname.includes('/local-guide')} />
             <Link to={`/trip/${tripId}/emergency`} className="flex flex-col items-center justify-center text-red-500">
               <ShieldAlert size={22} />
               <span className="text-[10px] font-semibold mt-0.5">SOS</span>
@@ -224,6 +226,7 @@ function Layout() {
           {/* Trip-specific routes */}
           <Route path="/trip/:tripId" element={<TripSummary />} />
           <Route path="/trip/:tripId/itinerary" element={<Itinerary />} />
+          <Route path="/trip/:tripId/reviews" element={<PlaceReviewsPage />} />
           <Route path="/trip/:tripId/assistant" element={<Assistant />} />
           <Route path="/trip/:tripId/local-guide" element={<LocalGuide />} />
           <Route path="/trip/:tripId/emergency" element={<Emergency />} />

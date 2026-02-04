@@ -8,5 +8,7 @@ router.post('/itinerary', authMiddleware, aiController.generateItinerary);
 router.get('/itinerary/:tripId', authMiddleware, aiController.getItinerary);
 router.post('/local-guide', authMiddleware, aiController.localGuide);
 router.post('/vr-explain', authMiddleware, aiController.vrExplain);
+router.get('/chat-history/:tripId', authMiddleware, aiController.getChatHistory);
+router.delete('/chat-history/:tripId', authMiddleware, aiController.clearChatHistory);
 
 module.exports = router;

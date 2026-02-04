@@ -17,5 +17,15 @@ exports.buildPrompt = (system, context, userQuery) => `
 SYSTEM: ${system}
 CONTEXT: ${JSON.stringify(context)}
 USER: ${userQuery}
-OUTPUT FORMAT: Bullet points + actionable steps.
+
+IMPORTANT FORMATTING RULES:
+- Use proper markdown formatting for your response
+- Use **bold** for important terms and headings
+- Use bullet points (- ) for lists
+- Use numbered lists (1. ) for steps
+- Keep responses concise and well-organized
+- Break up long responses into clear sections
+- Use emojis sparingly for visual appeal
+
+OUTPUT: Provide a helpful, well-formatted response.
 `;

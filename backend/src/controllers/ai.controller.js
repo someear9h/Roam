@@ -208,3 +208,38 @@ exports.vrExplain = async (req, res) => {
 
   res.json({ success: true, data: { response: responseText } });
 };
+
+exports.getChatHistory = async (req, res) => {
+  const tripId = Number(req.params.tripId);
+  if (isNaN(tripId)) {
+    return res.status(400).json({ success: false, error: 'Invalid tripId' });
+  }
+
+  try {
+    const chatLog = await prisma.chatLog.findUnique({ where: { trip_id: tripId } });
+    const messages = chatLog?.messages || [];
+    res.json({ success: true, data: messages });
+  } catch (error) {
+    console.error('Error fetching chat history:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch chat history' });
+  }
+};
+
+exports.clearChatHistory = async (req, res) => {
+  const tripId = Number(req.params.tripId);
+  if (isNaN(tripId)) {
+    return res.status(400).json({ success: false, error: 'Invalid tripId' });
+  }
+
+  try {
+    await prisma.chatLog.upsert({
+      where: { trip_id: tripId },
+      update: { messages: [], updated_at: new Date() },
+      create: { trip_id: tripId, messages: [] },
+    });
+    res.json({ success: true, message: 'Chat history cleared' });
+  } catch (error) {
+    console.error('Error clearing chat history:', error);
+    res.status(500).json({ success: false, error: 'Failed to clear chat history' });
+  }
+};
