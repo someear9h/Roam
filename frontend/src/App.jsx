@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation, Navigate, useParams } from 'react-router-dom';
 import { 
   Home, Map, MessageSquare, ShieldAlert, Globe, LogOut, Eye,
-  Search, Menu, User, ArrowLeft, Star
+  Search, Menu, User, ArrowLeft, Star, Settings
 } from 'lucide-react';
 
 // --- CONTEXT ---
 import { AuthProvider, useAuth } from './context/AuthContext';
+
+// --- COMPONENT IMPORTS ---
+import PreferencesModal from './components/PreferencesModal';
 
 // --- PAGE IMPORTS ---
 import Landing from './pages/Landing';
@@ -26,6 +29,7 @@ import PlaceReviewsPage from './pages/PlaceReviewsPage';
 const Navbar = () => {
   const location = useLocation();
   const { isAuthenticated, logout, user } = useAuth();
+  const [showPreferences, setShowPreferences] = useState(false);
   
   // Extract tripId from URL if present
   const tripIdMatch = location.pathname.match(/\/trip\/(\d+)/);
@@ -49,6 +53,9 @@ const Navbar = () => {
 
   return (
     <>
+      {/* Preferences Modal */}
+      <PreferencesModal isOpen={showPreferences} onClose={() => setShowPreferences(false)} />
+      
       {/* DESKTOP NAV - Enhanced Style */}
       <nav className="hidden md:flex fixed top-0 w-full bg-white/95 backdrop-blur-md border-b border-slate-200 z-50 h-20 items-center justify-between px-6 lg:px-10">
         
@@ -101,6 +108,14 @@ const Navbar = () => {
           
           <div className="h-8 w-px bg-slate-200"></div>
 
+          <button
+            onClick={() => setShowPreferences(true)}
+            className="p-2.5 text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-full transition-colors"
+            title="Preferences"
+          >
+            <Settings size={18} />
+          </button>
+
           <div className="flex items-center gap-2 border border-slate-200 rounded-full p-1.5 pl-3 hover:shadow-md transition-shadow cursor-pointer">
             <Menu size={16} className="text-slate-600" />
             <div className="relative">
@@ -126,8 +141,14 @@ const Navbar = () => {
           <>
             <MobileNavLink to={`/trip/${tripId}`} icon={Home} label="Trip" active={location.pathname === `/trip/${tripId}`} />
             <MobileNavLink to={`/trip/${tripId}/itinerary`} icon={Map} label="Plan" active={location.pathname.includes('/itinerary')} />
-            <MobileNavLink to={`/trip/${tripId}/reviews`} icon={Star} label="Reviews" active={location.pathname.includes('/reviews')} />
             <MobileNavLink to={`/trip/${tripId}/assistant`} icon={MessageSquare} label="Chat" active={location.pathname.includes('/assistant')} />
+            <button 
+              onClick={() => setShowPreferences(true)} 
+              className="flex flex-col items-center justify-center text-slate-400"
+            >
+              <Settings size={22} />
+              <span className="text-[10px] font-semibold mt-0.5">Prefs</span>
+            </button>
             <Link to={`/trip/${tripId}/emergency`} className="flex flex-col items-center justify-center text-red-500">
               <ShieldAlert size={22} />
               <span className="text-[10px] font-semibold mt-0.5">SOS</span>
@@ -137,6 +158,13 @@ const Navbar = () => {
           <>
             <MobileNavLink to="/dashboard" icon={Home} label="Home" active={isActive('/dashboard')} />
             <MobileNavLink to="/vr-preview" icon={Eye} label="VR" active={isActive('/vr-preview')} />
+            <button 
+              onClick={() => setShowPreferences(true)} 
+              className="flex flex-col items-center justify-center text-slate-400"
+            >
+              <Settings size={22} />
+              <span className="text-[10px] font-semibold mt-0.5">Prefs</span>
+            </button>
             <Link to="/emergency" className="flex flex-col items-center justify-center text-red-500">
               <ShieldAlert size={22} />
               <span className="text-[10px] font-semibold mt-0.5">SOS</span>

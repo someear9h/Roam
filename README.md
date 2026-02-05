@@ -262,7 +262,7 @@ npm run dev
 | Service | URL |
 |---------|-----|
 | **Frontend** | http://localhost:5173 |
-| **Backend API** | http://localhost:3001 |
+| **Backend API** | http://localhost:5001 |
 
 ---
 
@@ -283,7 +283,7 @@ JWT_SECRET="your-super-secret-jwt-key"
 GOOGLE_API_KEY="your-google-genai-api-key"
 
 # Server Config
-PORT=3001
+PORT=5001
 NODE_ENV=development
 
 # Frontend URL (CORS)

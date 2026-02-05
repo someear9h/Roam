@@ -1,10 +1,11 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { 
   Camera, Upload, X, Copy, Check, RefreshCw, Loader2, 
   ArrowRightLeft, Languages, Image as ImageIcon, Mic, Volume2
 } from 'lucide-react';
+import Tesseract from 'tesseract.js';
 
-// Common languages with their codes
+// Common languages with their codes (LibreTranslate compatible)
 const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
   { code: 'es', name: 'Spanish', flag: '🇪🇸' },
@@ -23,36 +24,149 @@ const LANGUAGES = [
   { code: 'vi', name: 'Vietnamese', flag: '🇻🇳' },
 ];
 
-// Free translation using MyMemory API (no API key needed, 1000 words/day free)
+// LibreTranslate API for translation
+// Multiple free translation API options
+const LINGVA_API = 'https://lingva.ml/api/v1';
+
 async function translateText(text, sourceLang, targetLang) {
-  try {
-    const response = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`
-    );
-    const data = await response.json();
-    
-    if (data.responseStatus === 200 && data.responseData?.translatedText) {
-      return data.responseData.translatedText;
+  // Try multiple translation services in order
+  const translators = [
+    () => translateWithLingva(text, sourceLang, targetLang),
+    () => translateWithMyMemory(text, sourceLang, targetLang),
+    () => translateWithLibreTranslate(text, sourceLang, targetLang),
+  ];
+  
+  for (const translator of translators) {
+    try {
+      const result = await translator();
+      if (result && result.trim()) {
+        return result;
+      }
+    } catch (error) {
+      console.warn('Translation attempt failed, trying next...', error.message);
+      continue;
     }
-    throw new Error('Translation failed');
+  }
+  
+  throw new Error('All translation services failed. Please try again later.');
+}
+
+// Lingva Translate API (free and open-source)
+async function translateWithLingva(text, sourceLang, targetLang) {
+  try {
+    const source = sourceLang === 'auto' ? 'auto' : sourceLang;
+    const response = await fetch(
+      `${LINGVA_API}/${source}/${targetLang}/${encodeURIComponent(text)}`
+    );
+    
+    if (!response.ok) {
+      throw new Error('Lingva API request failed');
+    }
+    
+    const data = await response.json();
+    if (data.translation) {
+      return data.translation;
+    }
+    throw new Error('No translation in response');
   } catch (error) {
-    console.error('Translation error:', error);
+    console.error('Lingva error:', error);
     throw error;
   }
 }
 
-// OCR using free Tesseract.js loaded from CDN (for image text extraction)
-async function extractTextFromImage(imageBase64) {
-  // For demo purposes, we'll use a simpler approach
-  // In production, you'd use Tesseract.js or a similar OCR library
-  return new Promise((resolve, reject) => {
-    // Simulated OCR - in real implementation, use Tesseract.js
-    // This is a placeholder that returns sample text
-    setTimeout(() => {
-      resolve("Sample extracted text from image. For full OCR functionality, integrate Tesseract.js.");
-    }, 1500);
-  });
+// MyMemory API (1000 words/day free)
+async function translateWithMyMemory(text, sourceLang, targetLang) {
+  try {
+    const source = sourceLang === 'auto' ? 'en' : sourceLang;
+    const response = await fetch(
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${source}|${targetLang}`
+    );
+    const data = await response.json();
+    
+    if (data.responseStatus === 200 && data.responseData?.translatedText) {
+      // Check if we got a valid translation (not an error message)
+      const translated = data.responseData.translatedText;
+      if (!translated.includes('MYMEMORY WARNING') && !translated.includes('PLEASE SELECT')) {
+        return translated;
+      }
+    }
+    throw new Error('MyMemory translation failed');
+  } catch (error) {
+    console.error('MyMemory error:', error);
+    throw error;
+  }
 }
+
+// LibreTranslate API (requires API key for public instance)
+async function translateWithLibreTranslate(text, sourceLang, targetLang) {
+  try {
+    const response = await fetch('https://libretranslate.com/translate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        q: text,
+        source: sourceLang === 'auto' ? 'auto' : sourceLang,
+        target: targetLang,
+        format: 'text'
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error('LibreTranslate API request failed');
+    }
+    
+    const data = await response.json();
+    if (data.translatedText) {
+      return data.translatedText;
+    }
+    throw new Error('No translation in response');
+  } catch (error) {
+    console.error('LibreTranslate error:', error);
+    throw error;
+  }
+}
+
+// OCR using Tesseract.js
+async function extractTextFromImage(imageSource, lang = 'eng', onProgress) {
+  try {
+    const result = await Tesseract.recognize(
+      imageSource,
+      lang,
+      {
+        logger: (m) => {
+          if (m.status === 'recognizing text' && onProgress) {
+            onProgress(Math.round(m.progress * 100));
+          }
+        }
+      }
+    );
+    return result.data.text.trim();
+  } catch (error) {
+    console.error('Tesseract OCR error:', error);
+    throw error;
+  }
+}
+
+// Map language codes to Tesseract language codes
+const TESSERACT_LANG_MAP = {
+  'en': 'eng',
+  'es': 'spa',
+  'fr': 'fra',
+  'de': 'deu',
+  'it': 'ita',
+  'pt': 'por',
+  'ja': 'jpn',
+  'ko': 'kor',
+  'zh': 'chi_sim',
+  'ar': 'ara',
+  'hi': 'hin',
+  'ru': 'rus',
+  'nl': 'nld',
+  'th': 'tha',
+  'vi': 'vie',
+};
 
 export default function TranslationTab({ onClose }) {
   const [sourceLang, setSourceLang] = useState('auto');
@@ -61,6 +175,7 @@ export default function TranslationTab({ onClose }) {
   const [translatedText, setTranslatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState(0);
   const [capturedImage, setCapturedImage] = useState(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
@@ -82,7 +197,8 @@ export default function TranslationTab({ onClose }) {
       const result = await translateText(sourceText, detectLang, targetLang);
       setTranslatedText(result);
     } catch (err) {
-      setError('Translation failed. Please try again.');
+      console.error('Translation error:', err);
+      setError(err.message || 'Translation failed. Please try again.');
     } finally {
       setIsTranslating(false);
     }
@@ -163,24 +279,36 @@ export default function TranslationTab({ onClose }) {
     }
   };
 
-  // Process image with OCR
+  // Process image with OCR using Tesseract.js
   const processImage = async (imageData) => {
     setIsExtracting(true);
+    setOcrProgress(0);
     setError('');
     
     try {
-      const text = await extractTextFromImage(imageData);
-      setSourceText(text);
-      // Auto-translate after extraction
-      if (text) {
-        const detectLang = sourceLang === 'auto' ? 'en' : sourceLang;
-        const result = await translateText(text, detectLang, targetLang);
-        setTranslatedText(result);
+      // Get Tesseract language code
+      const detectLang = sourceLang === 'auto' ? 'en' : sourceLang;
+      const tesseractLang = TESSERACT_LANG_MAP[detectLang] || 'eng';
+      
+      const text = await extractTextFromImage(imageData, tesseractLang, setOcrProgress);
+      
+      if (!text || text.trim() === '') {
+        setError('No text detected in image. Try a clearer image with visible text.');
+        return;
       }
+      
+      setSourceText(text);
+      
+      // Auto-translate after extraction
+      setIsTranslating(true);
+      const result = await translateText(text, detectLang, targetLang);
+      setTranslatedText(result);
     } catch (err) {
       setError('Failed to extract text from image. Try uploading a clearer image.');
     } finally {
       setIsExtracting(false);
+      setIsTranslating(false);
+      setOcrProgress(0);
     }
   };
 
@@ -201,9 +329,9 @@ export default function TranslationTab({ onClose }) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full min-h-0 bg-gray-50">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-white border-b border-gray-200">
+      <div className="flex-none flex items-center justify-between p-4 bg-white border-b border-gray-200">
         <div className="flex items-center gap-2">
           <Languages className="text-coral-500" size={24} />
           <h3 className="font-bold text-gray-800">Photo Translate</h3>
@@ -216,7 +344,7 @@ export default function TranslationTab({ onClose }) {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 pb-24">
         {/* Camera View */}
         {isCameraOpen && (
           <div className="relative bg-black rounded-2xl overflow-hidden">
@@ -258,10 +386,17 @@ export default function TranslationTab({ onClose }) {
               <X size={18} />
             </button>
             {isExtracting && (
-              <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center">
-                <div className="flex items-center gap-2 text-white">
-                  <Loader2 size={24} className="animate-spin" />
-                  <span>Extracting text...</span>
+              <div className="absolute inset-0 bg-black/50 rounded-2xl flex flex-col items-center justify-center gap-3">
+                <Loader2 size={32} className="animate-spin text-white" />
+                <div className="text-white text-center">
+                  <p className="font-medium">Extracting text with Tesseract...</p>
+                  <p className="text-sm text-white/80">{ocrProgress}% complete</p>
+                </div>
+                <div className="w-48 h-2 bg-white/30 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-coral-500 transition-all duration-300"
+                    style={{ width: `${ocrProgress}%` }}
+                  />
                 </div>
               </div>
             )}
@@ -415,7 +550,7 @@ export default function TranslationTab({ onClose }) {
         {/* Info Note */}
         <p className="text-xs text-gray-400 text-center px-4">
           💡 Tip: Take a photo of signs, menus, or documents to instantly translate them.
-          Uses free translation services with daily limits.
+          Uses Tesseract.js for OCR with multiple translation backends.
         </p>
       </div>
     </div>

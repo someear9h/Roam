@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const gemini = require('../services/gemini.service');
-const { chatSchema, generateItinerarySchema, localGuideSchema, vrExplainSchema, smartItinerarySchema } = require('../utils/validation');
+const { chatSchema, generateItinerarySchema, localGuideSchema, vrExplainSchema, smartItinerarySchema, ocrSchema } = require('../utils/validation');
 
 const getFullContext = async (tripId, userId) => {
   const trip = await prisma.trip.findUnique({ where: { id: tripId } });
@@ -27,7 +27,13 @@ exports.chat = async (req, res) => {
   
   // Get chat history for context
   const chatLog = await prisma.chatLog.findUnique({ where: { trip_id: tripId } });
-  const recentMessages = chatLog?.messages?.slice(-5) || [];
+  // Ensure messages is an array (MySQL may return JSON as string)
+  let messages = chatLog?.messages || [];
+  if (typeof messages === 'string') {
+    try { messages = JSON.parse(messages); } catch { messages = []; }
+  }
+  if (!Array.isArray(messages)) messages = [];
+  const recentMessages = messages.slice(-5);
   context.chatHistory = recentMessages;
 
   const prompt = gemini.buildPrompt(
@@ -217,7 +223,12 @@ exports.getChatHistory = async (req, res) => {
 
   try {
     const chatLog = await prisma.chatLog.findUnique({ where: { trip_id: tripId } });
-    const messages = chatLog?.messages || [];
+    let messages = chatLog?.messages || [];
+    // Ensure messages is an array (MySQL may return JSON as string)
+    if (typeof messages === 'string') {
+      try { messages = JSON.parse(messages); } catch { messages = []; }
+    }
+    if (!Array.isArray(messages)) messages = [];
     res.json({ success: true, data: messages });
   } catch (error) {
     console.error('Error fetching chat history:', error);
@@ -241,5 +252,23 @@ exports.clearChatHistory = async (req, res) => {
   } catch (error) {
     console.error('Error clearing chat history:', error);
     res.status(500).json({ success: false, error: 'Failed to clear chat history' });
+  }
+};
+
+// OCR - Extract text from image
+exports.extractTextFromImage = async (req, res) => {
+  const result = ocrSchema.safeParse(req.body);
+  if (!result.success) {
+    return res.status(400).json({ success: false, error: result.error.format() });
+  }
+  
+  const { image, mimeType } = result.data;
+  
+  try {
+    const extractedText = await gemini.extractTextFromImage(image, mimeType || 'image/jpeg');
+    res.json({ success: true, data: { text: extractedText } });
+  } catch (error) {
+    console.error('OCR error:', error);
+    res.status(500).json({ success: false, error: 'Failed to extract text from image' });
   }
 };

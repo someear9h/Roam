@@ -8,6 +8,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { aiAPI, tripAPI } from '../services/api';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 const CATEGORIES = [
   { id: 'food', label: 'Food & Dining', icon: Utensils, color: 'rose' },
@@ -228,9 +229,7 @@ export default function LocalGuide() {
             </div>
           </div>
           <div className="p-6">
-            <div className="prose prose-gray max-w-none">
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
-            </div>
+            <MarkdownRenderer content={aiResponse} className="text-gray-700" />
           </div>
         </div>
       )}

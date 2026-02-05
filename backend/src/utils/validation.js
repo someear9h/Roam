@@ -118,3 +118,9 @@ exports.tripSummarySchema = z.object({
 exports.travelReadinessSchema = z.object({
   tripId: z.number({ message: 'tripId must be a number' }),
 });
+
+// OCR schema
+exports.ocrSchema = z.object({
+  image: z.string().min(1, { message: 'Image data is required' }),
+  mimeType: z.string().optional(),
+});

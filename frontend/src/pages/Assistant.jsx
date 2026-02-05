@@ -242,7 +242,9 @@ export default function Assistant() {
 
       {/* TRANSLATION TAB */}
       {activeTab === 'translate' ? (
-        <TranslationTab onClose={() => setActiveTab('chat')} />
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <TranslationTab onClose={() => setActiveTab('chat')} />
+        </div>
       ) : (
         <>
           {/* MESSAGES */}

@@ -13,6 +13,34 @@ exports.generateContent = async (prompt) => {
   }
 };
 
+// Extract text from image using Gemini Vision
+exports.extractTextFromImage = async (base64Image, mimeType = 'image/jpeg') => {
+  try {
+    // Remove data URL prefix if present
+    const imageData = base64Image.replace(/^data:image\/\w+;base64,/, '');
+    
+    const result = await model.generateContent([
+      {
+        inlineData: {
+          mimeType: mimeType,
+          data: imageData
+        }
+      },
+      `Extract ALL text visible in this image. 
+       - Return ONLY the extracted text, nothing else
+       - Preserve the original formatting and line breaks
+       - If there are multiple languages, extract text in all languages
+       - If no text is found, return "No text detected in image"
+       - Do not add any explanations or additional content`
+    ]);
+    
+    return result.response.text().trim();
+  } catch (err) {
+    console.error('OCR Error:', err);
+    throw new Error('Failed to extract text from image');
+  }
+};
+
 exports.buildPrompt = (system, context, userQuery) => `
 SYSTEM: ${system}
 CONTEXT: ${JSON.stringify(context)}

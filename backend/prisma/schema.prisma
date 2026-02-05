@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -63,11 +63,11 @@ model Destination {
 model UserPreferences {
   id                  Int      @id @default(autoincrement())
   user_id             String   @unique
-  travel_style        String   @default("balanced") // relaxed, balanced, packed
-  food_preference     String   @default("all") // veg, non-veg, vegan, all
-  pace                String   @default("moderate") // slow, moderate, fast
-  interests           Json     @default("[]") // array of interests
-  budget_level        String   @default("moderate") // budget, moderate, luxury
+  travel_style        String   @default("balanced") 
+  food_preference     String   @default("all") 
+  pace                String   @default("moderate") 
+  interests           Json     @default("[]") 
+  budget_level        String   @default("moderate") 
   onboarding_complete Boolean  @default(false)
   updated_at          DateTime @default(now())
   user                User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
