@@ -14,25 +14,52 @@ exports.getTrips = async (req, res) => {
 
 exports.getTrip = async (req, res) => {
   const tripId = Number(req.params.tripId);
+
   if (isNaN(tripId)) {
-    return res.status(400).json({ success: false, error: 'Invalid tripId (must be number)' });
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid tripId (must be number)'
+    });
   }
 
-  const trip = await prisma.trip.findUnique({
-    where: { id: tripId },
-    include: { itinerary: true }
-  });
+  try {
 
-  if (!trip) {
-    return res.status(404).json({ success: false, error: 'Trip not found' });
+    const trip = await prisma.trip.findUnique({
+      where: { id: tripId },
+      include: {
+        hotelBooking: true,
+        chat_log: true,
+        reviews: true
+      }
+    });
+
+    if (!trip) {
+      return res.status(404).json({
+        success: false,
+        error: 'Trip not found'
+      });
+    }
+
+    if (trip.user_id !== req.user.userId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to access this trip'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: trip
+    });
+
+  } catch (error) {
+
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch trip'
+    });
+
   }
-
-  // Verify ownership
-  if (trip.user_id !== req.user.userId) {
-    return res.status(403).json({ success: false, error: 'Not authorized to access this trip' });
-  }
-
-  res.json({ success: true, data: trip });
 };
 
 exports.createTrip = async (req, res) => {
@@ -43,67 +70,101 @@ exports.createTrip = async (req, res) => {
   const { destination, start_date, end_date, booking_id } = result.data;
 
   const trip = await prisma.trip.create({
-    data: {
-      user_id: req.user.userId,
-      destination,
-      start_date: start_date ? new Date(start_date) : null,
-      end_date: end_date ? new Date(end_date) : null,
-      booking_id,
-    },
-  });
+  data: {
+    user_id: req.user.userId,
+    destination,
+    start_date: start_date ? new Date(start_date) : null,
+    end_date: end_date ? new Date(end_date) : null,
+    booking_id
+  },
+});
 
-  res.json({ success: true, data: { tripId: trip.id } });
+  res.json({ success: true, data: trip });
 };
 
 exports.getTripContext = async (req, res) => {
   const tripId = Number(req.params.tripId);
+
   if (isNaN(tripId)) {
-    return res.status(400).json({ success: false, error: 'Invalid tripId (must be number)' });
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid tripId'
+    });
   }
 
-  const trip = await prisma.trip.findUnique({ 
-    where: { id: tripId },
-    include: { itinerary: true }
-  });
-  if (!trip) return res.status(404).json({ success: false, error: 'Trip not found' });
+  try {
+    const trip = await prisma.trip.findUnique({
+      where: { id: tripId },
+      include: {
+        hotelBooking: true
+      }
+    });
 
-  // Get user preferences
-  const userPrefs = await prisma.userPreferences.findUnique({
-    where: { user_id: req.user.userId },
-  });
-
-  // Get destination data if available
-  const destData = await prisma.destination.findUnique({
-    where: { name: trip.destination },
-  });
-
-  // Calculate days until trip
-  const daysUntil = trip.start_date 
-    ? Math.ceil((new Date(trip.start_date) - new Date()) / (1000 * 60 * 60 * 24))
-    : null;
-
-  // Determine trip phase
-  let phase = 'planning';
-  const now = new Date();
-  if (trip.start_date && trip.end_date) {
-    const start = new Date(trip.start_date);
-    const end = new Date(trip.end_date);
-    if (now < start) phase = 'pre-trip';
-    else if (now >= start && now <= end) phase = 'during-trip';
-    else phase = 'post-trip';
-  }
-
-  res.json({ 
-    success: true, 
-    data: {
-      trip,
-      itinerary: trip.itinerary?.plan || null,
-      preferences: userPrefs,
-      destination: destData,
-      daysUntil,
-      phase
+    if (!trip) {
+      return res.status(404).json({
+        success: false,
+        error: 'Trip not found'
+      });
     }
-  });
+
+    if (trip.user_id !== req.user.userId) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized'
+      });
+    }
+
+    const destination = await prisma.destination.findUnique({
+      where: { name: trip.destination }
+    });
+
+    const userPrefs = await prisma.userPreferences.findUnique({
+      where: { user_id: req.user.userId }
+    });
+
+    const daysUntil = trip.start_date
+      ? Math.ceil(
+          (new Date(trip.start_date) - new Date()) /
+            (1000 * 60 * 60 * 24)
+        )
+      : null;
+
+    let phase = 'planning';
+    const now = new Date();
+
+    if (trip.start_date && trip.end_date) {
+      if (now < trip.start_date) phase = 'pre-trip';
+      else if (now >= trip.start_date && now <= trip.end_date)
+        phase = 'during-trip';
+      else phase = 'post-trip';
+    }
+
+    // Include alerts and itinerary alongside destination and hotel VR assets
+    const alerts = await prisma.alert.findMany({ where: { trip_id: tripId } });
+
+    res.json({
+      success: true,
+      data: {
+        trip,
+        hotelBooking: trip.hotelBooking,
+        preferences: userPrefs,
+        vr_assets: destination?.vr_assets || [],
+        hotel_vr_assets: trip.hotelBooking?.vr_assets || [],
+        highlights: destination?.highlights || [],
+        emergency_contacts: destination?.emergency_contacts || {},
+        ai_itinerary: trip.ai_itinerary || null,
+        alerts: alerts || [],
+        daysUntil,
+        phase
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch trip context'
+    });
+  }
 };
 
 // Travel Readiness - Packing list, currency, visa, emergency contacts

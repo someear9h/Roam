@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Search, MapPin, Calendar, ChevronRight, ArrowRight, 
-  Plane, Info, CreditCard, FileText, Bus, Globe, Building,
+  Info, CreditCard, FileText, Bus, Globe, Building,
   Eye, ChevronLeft, Play, Star, Clock, Menu, X
 } from 'lucide-react';
 
 // Travel Services - like the Taiwan tourism site
 const TRAVEL_SERVICES = [
-  { id: 'arrival', label: 'Arrival & Departure', icon: Plane, link: '/assistant' },
+  { id: 'arrival', label: 'Arrival & Departure', icon: MapPin, link: '/assistant' },
   { id: 'info', label: 'Travel Information', icon: Info, link: '/local-guide' },
   { id: 'visa', label: 'Visa Info', icon: FileText, link: '/assistant' },
   { id: 'transport', label: 'Transport', icon: Bus, link: '/local-guide' },
@@ -86,7 +86,7 @@ export default function Landing() {
   };
 
   const handleVRPreview = (destinationId) => {
-    navigate(`/vr-preview?destination=${destinationId}`);
+    navigate('/dashboard'); // VR previews now available per-trip
   };
 
   return (
@@ -393,7 +393,7 @@ export default function Landing() {
               color="coral"
             />
             <FeatureCard
-              icon={Plane}
+              icon={MapPin}
               title="AI Itinerary Planning"
               description="Get personalized day-by-day itineraries crafted by AI based on your preferences, pace, and interests."
               color="blue"

@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { 
   ArrowLeft, CheckCircle, Circle, Luggage, CreditCard, FileText,
   Stethoscope, Phone, Lightbulb, Sparkles, ChevronDown, ChevronRight,
-  Plane, Globe, Shield, AlertCircle, DollarSign, Heart, Plus,
+  Globe, Shield, AlertCircle, DollarSign, Heart, Plus,
   Thermometer, Pill, Building, MapPin, Clock, Check, X, Trash2,
   Shirt, Camera, Wifi, Droplets, Sun, Lock, Headphones
 } from 'lucide-react';

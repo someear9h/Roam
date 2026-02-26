@@ -1,198 +1,232 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const gemini = require('../services/gemini.service');
-const { chatSchema, generateItinerarySchema, localGuideSchema, vrExplainSchema, smartItinerarySchema, ocrSchema } = require('../utils/validation');
+const {
+  chatSchema,
+  smartItinerarySchema,
+  localGuideSchema,
+  vrExplainSchema,
+  ocrSchema,
+} = require('../utils/validation');
 
-const getFullContext = async (tripId, userId) => {
-  const trip = await prisma.trip.findUnique({ where: { id: tripId } });
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { language: true, accessibility_needs: true, name: true },
+
+
+async function checkDailyLimit() {
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const count = await prisma.aICache.count({
+    where: {
+      created_at: { gte: todayStart },
+    },
   });
+
+  if (count >= 20) {
+    throw new Error('Daily AI request limit reached');
+  }
+}
+
+
+async function buildSafeContext(tripId, userId) {
+  const trip = await prisma.trip.findUnique({
+    where: { id: tripId },
+    include: {
+      hotelBooking: true,
+    },
+  });
+
+  if (!trip) throw new Error('Trip not found');
+
   const userPrefs = await prisma.userPreferences.findUnique({
     where: { user_id: userId },
   });
-  if (!trip) throw new Error('Trip not found');
-  return { trip, user, userPrefs };
-};
+
+  return {
+    destination: trip.destination,
+    start_date: trip.start_date,
+    end_date: trip.end_date,
+    preferences: userPrefs || {},
+    // Flight information removed — system no longer depends on flights
+    hotel: trip.hotelBooking
+      ? {
+          name: trip.hotelBooking.name,
+          area: trip.hotelBooking.area,
+        }
+      : null,
+  };
+}
+
+
 
 exports.chat = async (req, res) => {
   const result = chatSchema.safeParse(req.body);
   if (!result.success) {
     return res.status(400).json({ success: false, error: result.error.format() });
   }
+
   const { tripId, message } = result.data;
 
-  const context = await getFullContext(tripId, req.user.userId);
-  
-  // Get chat history for context
-  const chatLog = await prisma.chatLog.findUnique({ where: { trip_id: tripId } });
-  // Ensure messages is an array (MySQL may return JSON as string)
+  const chatLog = await prisma.chatLog.findUnique({
+    where: { trip_id: tripId },
+  });
+
   let messages = chatLog?.messages || [];
   if (typeof messages === 'string') {
     try { messages = JSON.parse(messages); } catch { messages = []; }
   }
   if (!Array.isArray(messages)) messages = [];
-  const recentMessages = messages.slice(-5);
-  context.chatHistory = recentMessages;
 
-  const prompt = gemini.buildPrompt(
-    `You are Compass, a calm, reliable, and friendly AI travel assistant. 
-    You help travelers with:
-    - Flight delays and rebooking advice
-    - Hotel check-in guidance
-    - Local recommendations
-    - Safety tips
-    - Cultural advice
-    - Emergency assistance
-    
-    Be concise, helpful, and reassuring. If the user seems stressed, acknowledge their feelings first.
-    Consider their preferences: ${JSON.stringify(context.userPrefs || {})}
-    Recent conversation: ${JSON.stringify(recentMessages)}`,
-    context,
-    message
-  );
-  const responseText = await gemini.generateContent(prompt);
+  const aiCount = messages.filter(m => m.ai).length;
 
-  const newMsg = { user: message, ai: responseText, timestamp: new Date().toISOString() };
+  if (aiCount >= 3) {
+    return res.status(429).json({
+      success: false,
+      error: 'AI chat limit reached for this trip',
+    });
+  }
 
-  await prisma.chatLog.upsert({
-    where: { trip_id: tripId },
-    update: { messages: { push: newMsg }, updated_at: new Date() },
-    create: { trip_id: tripId, messages: [newMsg] },
-  });
+  try {
+    await checkDailyLimit();
 
-  res.json({ success: true, data: { response: responseText } });
+    const context = await buildSafeContext(tripId, req.user.userId);
+
+    const recentMessages = messages.slice(-2);
+
+    const prompt = gemini.buildPrompt(
+      `You are Compass, a calm AI travel assistant. Be concise and reassuring.`,
+      context,
+      message
+    );
+
+    const responseText = await gemini.generateContent(prompt);
+
+    const newMsg = {
+      user: message,
+      ai: responseText,
+      timestamp: new Date().toISOString(),
+    };
+
+    await prisma.chatLog.upsert({
+      where: { trip_id: tripId },
+      update: { messages: { push: newMsg }, updated_at: new Date() },
+      create: { trip_id: tripId, messages: [newMsg] },
+    });
+
+    await prisma.aICache.create({
+      data: { key: `chat-${Date.now()}`, response: {} },
+    });
+
+    res.json({ success: true, data: { response: responseText } });
+
+  } catch (err) {
+    res.status(429).json({ success: false, error: err.message });
+  }
 };
+
+
 
 exports.generateItinerary = async (req, res) => {
   const result = smartItinerarySchema.safeParse(req.body);
   if (!result.success) {
     return res.status(400).json({ success: false, error: result.error.format() });
   }
-  const { tripId, preferences } = result.data;
 
-  const context = await getFullContext(tripId, req.user.userId);
-  const destData = await prisma.destination.findUnique({ where: { name: context.trip.destination } });
-  context.destData = destData;
-  
-  // Merge provided preferences with stored preferences
-  const finalPrefs = { ...context.userPrefs, ...preferences };
+  const { tripId } = result.data;
 
-  const tripDays = context.trip.start_date && context.trip.end_date
-    ? Math.ceil((new Date(context.trip.end_date) - new Date(context.trip.start_date)) / (1000 * 60 * 60 * 24))
-    : 5;
+  const trip = await prisma.trip.findUnique({ where: { id: tripId } });
 
-  const prompt = gemini.buildPrompt(
-    `Generate a detailed, smart day-wise itinerary for a ${tripDays}-day trip.
-    
-    User preferences:
-    - Travel style: ${finalPrefs?.travel_style || 'balanced'}
-    - Food: ${finalPrefs?.food_preference || 'all'}
-    - Pace: ${finalPrefs?.pace || 'moderate'}
-    - Interests: ${JSON.stringify(finalPrefs?.interests || [])}
-    - Budget: ${finalPrefs?.budget_level || 'moderate'}
-    - Accessibility: ${context.user?.accessibility_needs || 'none'}
-    
-    Guidelines:
-    - Include buffer time between activities
-    - Consider weather and best times to visit
-    - Mix popular attractions with hidden gems
-    - Include meal recommendations
-    - Add practical tips for each activity
-    
-    Return as JSON:
-    {
-      "destination": "${context.trip.destination}",
-      "total_days": ${tripDays},
-      "days": [
-        {
-          "day": 1,
-          "date": "YYYY-MM-DD",
-          "theme": "Arrival & Exploration",
-          "activities": [
-            {
-              "time": "09:00",
-              "title": "Activity Name",
-              "description": "Brief description",
-              "duration": "2 hours",
-              "type": "sightseeing|food|transport|rest|shopping",
-              "tips": "Helpful tip",
-              "cost_estimate": "$$$"
-            }
-          ],
-          "meals": {
-            "breakfast": "Recommendation",
-            "lunch": "Recommendation", 
-            "dinner": "Recommendation"
-          },
-          "notes": "Day-specific tips"
-        }
-      ],
-      "overall_tips": ["tip1", "tip2"],
-      "estimated_budget": "$$$ - $$$$"
-    }`,
-    context,
-    'Generate a personalized day-wise itinerary based on my preferences.'
-  );
-  const planText = await gemini.generateContent(prompt);
+  if (!trip) {
+    return res.status(404).json({ success: false, error: 'Trip not found' });
+  }
 
-  let plan;
-  try { 
-    const jsonMatch = planText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      plan = JSON.parse(jsonMatch[0]); 
-    } else {
-      plan = { raw: planText };
+  if (trip.ai_itinerary) {
+    return res.json({ success: true, data: trip.ai_itinerary });
+  }
+
+  try {
+    await checkDailyLimit();
+
+    const context = await buildSafeContext(tripId, req.user.userId);
+
+    const prompt = `
+      Generate concise day-wise itinerary.
+      Adjust first day based on flight arrival.
+      Return strict JSON only.
+    `;
+
+    const responseText = await gemini.generateContent(
+      gemini.buildPrompt(prompt, context)
+    );
+
+    let plan;
+    try {
+      plan = JSON.parse(responseText.match(/\{[\s\S]*\}/)[0]);
+    } catch {
+      plan = { raw: responseText };
     }
-  } catch { 
-    plan = { raw: planText }; 
+
+    await prisma.trip.update({
+      where: { id: tripId },
+      data: { ai_itinerary: plan },
+    });
+
+    await prisma.aICache.create({
+      data: { key: `itinerary-${tripId}`, response: {} },
+    });
+
+    res.json({ success: true, data: plan });
+
+  } catch (err) {
+    res.status(429).json({ success: false, error: err.message });
   }
-
-  await prisma.itinerary.upsert({
-    where: { trip_id: tripId },
-    update: { plan, generated_at: new Date() },
-    create: { trip_id: tripId, plan },
-  });
-
-  res.json({ success: true, data: { plan } });
 };
 
-exports.getItinerary = async (req, res) => {
-  const tripId = Number(req.params.tripId);
-  if (isNaN(tripId)) {
-    return res.status(400).json({ success: false, error: 'Invalid tripId (must be number)' });
-  }
 
-  const itinerary = await prisma.itinerary.findUnique({ where: { trip_id: tripId } });
-  res.json({ success: true, data: itinerary ? itinerary.plan : null });
-};
 
 exports.localGuide = async (req, res) => {
   const result = localGuideSchema.safeParse(req.body);
   if (!result.success) {
     return res.status(400).json({ success: false, error: result.error.format() });
   }
-  const { tripId, query, location } = result.data;
+
+  const { tripId, query } = result.data;
+  const cacheKey = `local-${tripId}-${query}`;
+
+  const cached = await prisma.aICache.findUnique({
+    where: { key: cacheKey },
+  });
+
+  if (cached) {
+    return res.json({ success: true, data: cached.response });
+  }
 
   try {
-    const context = await getFullContext(tripId, req.user.userId);
-    const destData = await prisma.destination.findUnique({ where: { name: context.trip.destination } });
-    context.destData = destData;
+    await checkDailyLimit();
+
+    const context = await buildSafeContext(tripId, req.user.userId);
 
     const prompt = gemini.buildPrompt(
-      'Provide on-ground guidance: nearby essentials, scam warnings, cultural norms, transport.',
+      'Provide concise local travel guidance.',
       context,
-      query + ` Location: ${JSON.stringify(location)}`
+      query
     );
+
     const responseText = await gemini.generateContent(prompt);
 
+    await prisma.aICache.create({
+      data: {
+        key: cacheKey,
+        response: { response: responseText },
+      },
+    });
+
     res.json({ success: true, data: { response: responseText } });
-  } catch (error) {
-    console.error('Local guide error:', error.message);
-    res.status(500).json({ success: false, error: error.message || 'Failed to get recommendations' });
+
+  } catch (err) {
+    res.status(429).json({ success: false, error: err.message });
   }
 };
+
 
 
 exports.vrExplain = async (req, res) => {
@@ -200,75 +234,196 @@ exports.vrExplain = async (req, res) => {
   if (!result.success) {
     return res.status(400).json({ success: false, error: result.error.format() });
   }
-  const { destination, location, time, userPreferences } = result.data;
 
-  const destData = await prisma.destination.findUnique({ where: { name: destination } });
-  const context = { destData, userPreferences, time, location };
+  const { destination, location, time } = result.data;
+  const cacheKey = `vr-${destination}-${location}-${time}`;
 
-  const prompt = gemini.buildPrompt(
-    'Explain what the user is seeing in VR: contextual info, best visit tips, crowd info.',
-    context,
-    `Explain ${location} at ${time}.`
-  );
-  const responseText = await gemini.generateContent(prompt);
+  const cached = await prisma.aICache.findUnique({
+    where: { key: cacheKey },
+  });
 
-  res.json({ success: true, data: { response: responseText } });
-};
-
-exports.getChatHistory = async (req, res) => {
-  const tripId = Number(req.params.tripId);
-  if (isNaN(tripId)) {
-    return res.status(400).json({ success: false, error: 'Invalid tripId' });
+  if (cached) {
+    return res.json({ success: true, data: cached.response });
   }
 
   try {
-    const chatLog = await prisma.chatLog.findUnique({ where: { trip_id: tripId } });
-    let messages = chatLog?.messages || [];
-    // Ensure messages is an array (MySQL may return JSON as string)
-    if (typeof messages === 'string') {
-      try { messages = JSON.parse(messages); } catch { messages = []; }
-    }
-    if (!Array.isArray(messages)) messages = [];
-    res.json({ success: true, data: messages });
-  } catch (error) {
-    console.error('Error fetching chat history:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch chat history' });
-  }
-};
+    await checkDailyLimit();
 
-exports.clearChatHistory = async (req, res) => {
-  const tripId = Number(req.params.tripId);
-  if (isNaN(tripId)) {
-    return res.status(400).json({ success: false, error: 'Invalid tripId' });
-  }
+    const prompt = `
+      Explain ${location} in ${destination}.
+      Time: ${time}.
+      Be concise.
+    `;
 
-  try {
-    await prisma.chatLog.upsert({
-      where: { trip_id: tripId },
-      update: { messages: [], updated_at: new Date() },
-      create: { trip_id: tripId, messages: [] },
+    const responseText = await gemini.generateContent(prompt);
+
+    await prisma.aICache.create({
+      data: {
+        key: cacheKey,
+        response: { response: responseText },
+      },
     });
-    res.json({ success: true, message: 'Chat history cleared' });
-  } catch (error) {
-    console.error('Error clearing chat history:', error);
-    res.status(500).json({ success: false, error: 'Failed to clear chat history' });
+
+    res.json({ success: true, data: { response: responseText } });
+
+  } catch (err) {
+    res.status(429).json({ success: false, error: err.message });
   }
 };
 
-// OCR - Extract text from image
+
 exports.extractTextFromImage = async (req, res) => {
   const result = ocrSchema.safeParse(req.body);
   if (!result.success) {
     return res.status(400).json({ success: false, error: result.error.format() });
   }
-  
-  const { image, mimeType } = result.data;
-  
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const count = await prisma.aICache.count({
+    where: {
+      key: { startsWith: 'ocr-' },
+      created_at: { gte: todayStart },
+    },
+  });
+
+  if (count >= 2) {
+    return res.status(429).json({
+      success: false,
+      error: 'OCR daily limit reached',
+    });
+  }
+
   try {
-    const extractedText = await gemini.extractTextFromImage(image, mimeType || 'image/jpeg');
-    res.json({ success: true, data: { text: extractedText } });
+    const { image, mimeType } = result.data;
+
+    const text = await gemini.extractTextFromImage(image, mimeType);
+
+    await prisma.aICache.create({
+      data: { key: `ocr-${Date.now()}`, response: {} },
+    });
+
+    res.json({ success: true, data: { text } });
+
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'OCR failed' });
+  }
+};
+
+
+exports.getItinerary = async (req, res) => {
+  const tripId = Number(req.params.tripId);
+
+  if (isNaN(tripId)) {
+    return res.status(400).json({
+      success: false,
+      error: "Invalid tripId",
+    });
+  }
+
+  try {
+    const trip = await prisma.trip.findUnique({
+      where: { id: tripId },
+      select: {
+        ai_itinerary: true,
+      },
+    });
+
+    if (!trip) {
+      return res.status(404).json({
+        success: false,
+        error: "Trip not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: trip.ai_itinerary,
+    });
+
   } catch (error) {
-    console.error('OCR error:', error);
-    res.status(500).json({ success: false, error: 'Failed to extract text from image' });
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch itinerary",
+    });
+  }
+};
+
+
+
+exports.getChatHistory = async (req, res) => {
+  const tripId = Number(req.params.tripId);
+
+  if (isNaN(tripId)) {
+    return res.status(400).json({
+      success: false,
+      error: "Invalid tripId",
+    });
+  }
+
+  try {
+    const chatLog = await prisma.chatLog.findUnique({
+      where: { trip_id: tripId },
+    });
+
+    let messages = chatLog?.messages || [];
+
+    if (typeof messages === "string") {
+      try {
+        messages = JSON.parse(messages);
+      } catch {
+        messages = [];
+      }
+    }
+
+    res.json({
+      success: true,
+      data: messages,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch chat history",
+    });
+  }
+};
+
+
+
+exports.clearChatHistory = async (req, res) => {
+  const tripId = Number(req.params.tripId);
+
+  if (isNaN(tripId)) {
+    return res.status(400).json({
+      success: false,
+      error: "Invalid tripId",
+    });
+  }
+
+  try {
+    await prisma.chatLog.upsert({
+      where: { trip_id: tripId },
+      update: {
+        messages: [],
+        updated_at: new Date(),
+      },
+      create: {
+        trip_id: tripId,
+        messages: [],
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "Chat history cleared",
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Failed to clear chat history",
+    });
   }
 };

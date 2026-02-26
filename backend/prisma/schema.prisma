@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -14,10 +14,12 @@ model User {
   phone               String?
   language            String   @default("en")
   accessibility_needs String?
+  onboarding_complete Boolean  @default(false)
   password            String
   created_at          DateTime @default(now())
   trips               Trip[]
   preferences         UserPreferences?
+  trip_reviews        TripReview[]
 }
 
 model Trip {
@@ -27,20 +29,19 @@ model Trip {
   start_date   DateTime?
   end_date     DateTime?
   booking_id   String?
-  status       String       @default("active")
+  status       String       @default("upcoming") // upcoming, ongoing, completed, cancelled
   created_at   DateTime     @default(now())
+
   user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  itinerary    Itinerary?
   chat_log     ChatLog?
+  reviews      TripReview[]
+  travel_readiness Json?
+  ai_itinerary Json?
+  
+  
+  hotelBooking  HotelBooking?
 }
 
-model Itinerary {
-  id            Int      @id @default(autoincrement())
-  trip_id       Int      @unique
-  plan          Json
-  generated_at  DateTime @default(now())
-  trip          Trip     @relation(fields: [trip_id], references: [id], onDelete: Cascade)
-}
 
 model ChatLog {
   id         Int      @id @default(autoincrement())
@@ -96,10 +97,58 @@ model TripMemory {
 
 model TripFeedback {
   id              Int      @id @default(autoincrement())
-  trip_id         Int      @unique
+  trip_id         Int
   rating          Int      // 1-5
   highlights      Json     @default("[]")
   improvements    String?  @db.Text
   would_recommend Boolean  @default(true)
   created_at      DateTime @default(now())
 }
+
+model TripReview {
+  id         Int      @id @default(autoincrement())
+  trip_id    Int
+  user_id    String
+  rating     Int?     // 1-5, optional
+  title      String?
+  comment    String?  @db.Text
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  trip       Trip     @relation(fields: [trip_id], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+
+model HotelBooking {
+  id           Int      @id @default(autoincrement())
+  trip_id      Int      @unique
+  name         String
+  area         String?
+  checkIn      DateTime
+  checkOut     DateTime
+  bookingRef   String?
+  raw_response Json?
+
+  vr_assets    Json?    // 👈 ADD THIS
+
+  trip         Trip     @relation(fields: [trip_id], references: [id])
+}
+
+model AICache {
+  id         Int      @id @default(autoincrement())
+  key        String   @unique
+  response   Json
+  created_at DateTime @default(now())
+}
+
+model Hotel {
+  id           Int      @id @default(autoincrement())
+  name         String
+  area         String
+  destination  String
+  priceRange   String?
+  rating       Float?
+  vr_assets    Json?
+  created_at   DateTime @default(now())
+}
+

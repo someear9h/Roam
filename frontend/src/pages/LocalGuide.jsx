@@ -84,8 +84,7 @@ export default function LocalGuide() {
     setAiResponse(null);
 
     try {
-      const response = await aiAPI.localGuide({
-        tripId: Number(tripId) || 1,
+      const response = await aiAPI.localGuide(Number(tripId) || 1, {
         query: searchQuery,
         location: userLocation
       });

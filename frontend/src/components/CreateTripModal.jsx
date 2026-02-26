@@ -1,15 +1,31 @@
-import React, { useState } from 'react';
-import { X, Plane, Calendar, MapPin, Loader2, Sparkles } from 'lucide-react';
-import { tripAPI } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { X, Calendar, MapPin, Loader2, Sparkles } from 'lucide-react';
+import { tripAPI, destinationAPI } from '../services/api';
 
 export default function CreateTripModal({ isOpen, onClose, onTripCreated }) {
   const [destination, setDestination] = useState('');
+  const [destinations, setDestinations] = useState([]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [bookingId, setBookingId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  useEffect(() => {
+    let mounted = true;
+    destinationAPI.list()
+      .then(resp => {
+        if (!mounted) return;
+        if (resp.data && resp.data.success) {
+          setDestinations(resp.data.data || []);
+        }
+      })
+      .catch(() => {
+        // ignore - keep text input
+      });
+    return () => { mounted = false; };
+  }, []);
 
+  // Always call hooks above. Only short-circuit rendering after hooks
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
@@ -53,7 +69,7 @@ export default function CreateTripModal({ isOpen, onClose, onTripCreated }) {
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="relative h-32 bg-gradient-to-r from-teal-600 to-blue-600 p-6">
+        <div className="relative h-32 bg-gradient-to-r from-orange-500 to-amber-500 p-6">
           <button 
             onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white transition-colors"
@@ -62,7 +78,7 @@ export default function CreateTripModal({ isOpen, onClose, onTripCreated }) {
           </button>
           <div className="flex items-center gap-3 text-white">
             <div className="p-3 bg-white/20 rounded-xl">
-              <Plane size={24} />
+              <MapPin size={24} />
             </div>
             <div>
               <h2 className="text-2xl font-bold">Plan New Trip</h2>
@@ -85,14 +101,28 @@ export default function CreateTripModal({ isOpen, onClose, onTripCreated }) {
               <MapPin size={14} className="inline mr-1" />
               Where are you going?
             </label>
-            <input
-              type="text"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              placeholder="e.g., Paris, France"
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 transition-colors"
-              required
-            />
+            {destinations.length > 0 ? (
+              <select
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-orange-500 transition-colors"
+                required
+              >
+                <option value="">Select a destination</option>
+                {destinations.map(d => (
+                  <option key={d.id} value={d.name}>{d.name}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={destination}
+                onChange={(e) => setDestination(e.target.value)}
+                placeholder="e.g., Paris, France"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-orange-500 transition-colors"
+                required
+              />
+            )}
           </div>
 
           {/* Dates */}
@@ -106,7 +136,7 @@ export default function CreateTripModal({ isOpen, onClose, onTripCreated }) {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-teal-500 transition-colors"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-orange-500 transition-colors"
               />
             </div>
             <div>
@@ -142,14 +172,14 @@ export default function CreateTripModal({ isOpen, onClose, onTripCreated }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 border border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+              className="flex-1 px-6 py-3 border border-orange-200 text-slate-700 font-bold rounded-xl hover:bg-orange-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex-1 px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isLoading ? (
                 <Loader2 size={18} className="animate-spin" />

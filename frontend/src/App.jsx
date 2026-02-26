@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { preferencesAPI } from './services/api';
 import { BrowserRouter, Routes, Route, Link, useLocation, Navigate, useParams } from 'react-router-dom';
 import { 
   Home, Map, MessageSquare, ShieldAlert, Globe, LogOut, Eye,
-  Search, Menu, User, ArrowLeft, Star, Settings
+  Search, Menu, User, ArrowLeft, Star, Settings, Bed
 } from 'lucide-react';
 
 // --- CONTEXT ---
@@ -22,7 +23,9 @@ import LocalGuide from './pages/LocalGuide';
 import Onboarding from './pages/Onboarding';
 import TravelReadiness from './pages/TravelReadiness';
 import TripSummary from './pages/TripSummary';
+import TripHotels from './pages/TripHotels';
 import VRPreview from './pages/VRPreview';
+import HotelVR from './pages/HotelVR';
 import PlaceReviewsPage from './pages/PlaceReviewsPage';
 
 // --- NAVBAR COMPONENT (Enhanced Style) ---
@@ -46,8 +49,8 @@ const Navbar = () => {
   const isTripPage = !!tripId;
 
   // Hide Navbar on these pages
-  const hideNavPaths = ['/', '/login', '/onboarding', '/vr-preview'];
-  const hideNavOnVR = location.pathname.includes('/vr') && !location.pathname.includes('/vr-preview');
+  const hideNavPaths = ['/', '/login', '/onboarding'];
+  const hideNavOnVR = location.pathname.includes('/vr-preview') || location.pathname.includes('/hotel-vr');
   if (hideNavPaths.includes(location.pathname) || hideNavOnVR) return null;
   if (!isAuthenticated) return null;
 
@@ -84,14 +87,16 @@ const Navbar = () => {
             <>
               <NavLink to={`/trip/${tripId}`} label="Overview" icon={Home} active={location.pathname === `/trip/${tripId}`} />
               <NavLink to={`/trip/${tripId}/itinerary`} label="Itinerary" icon={Map} active={location.pathname.includes('/itinerary')} />
+              
               <NavLink to={`/trip/${tripId}/reviews`} label="Reviews" icon={Star} active={location.pathname.includes('/reviews')} />
+              <NavLink to={`/trip/${tripId}/hotels`} label="Hotels" icon={Bed} active={location.pathname.includes('/hotels')} />
               <NavLink to={`/trip/${tripId}/assistant`} label="Assistant" icon={MessageSquare} active={location.pathname.includes('/assistant')} />
               <NavLink to={`/trip/${tripId}/local-guide`} label="Guide" icon={Globe} active={location.pathname.includes('/local-guide')} />
             </>
           ) : (
             <>
               <NavLink to="/dashboard" label="Dashboard" icon={Home} active={isActive('/dashboard')} />
-              <NavLink to="/vr-preview" label="VR Tour" icon={Eye} active={isActive('/vr-preview')} />
+              <NavLink to="/explore-vr" label="Explore VR" icon={Eye} active={isActive('/explore-vr')} />
             </>
           )}
         </div>
@@ -157,7 +162,7 @@ const Navbar = () => {
         ) : (
           <>
             <MobileNavLink to="/dashboard" icon={Home} label="Home" active={isActive('/dashboard')} />
-            <MobileNavLink to="/vr-preview" icon={Eye} label="VR" active={isActive('/vr-preview')} />
+            <MobileNavLink to="/explore-vr" icon={Eye} label="Explore VR" active={isActive('/explore-vr')} />
             <button 
               onClick={() => setShowPreferences(true)} 
               className="flex flex-col items-center justify-center text-slate-400"
@@ -208,6 +213,38 @@ function Layout() {
   const isOnboardingPage = location.pathname === '/onboarding';
   const isPublicPage = isLandingPage || isLoginPage || isOnboardingPage;
 
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      if (!isAuthenticated) {
+        setOnboardingChecked(true);
+        return;
+      }
+      try {
+        const res = await preferencesAPI.checkOnboardingStatus();
+        // backend may return either `completed` or `onboarding_complete`
+        const completed = res.data?.data?.completed ?? res.data?.data?.onboarding_complete;
+        if (!cancelled) {
+          setOnboardingComplete(!!completed);
+          setOnboardingChecked(true);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          // Conservative: if we can't verify onboarding, require it.
+          setOnboardingComplete(false);
+          setOnboardingChecked(true);
+        }
+      }
+    };
+    check();
+    return () => { cancelled = true; };
+    // Re-check onboarding status on navigation so finishing onboarding
+    // immediately unlocks the rest of the app without a full refresh.
+  }, [isAuthenticated, location.pathname]);
+
   // Show loading state
   if (isLoading) {
     return (
@@ -225,19 +262,40 @@ function Layout() {
     return <Landing />;
   }
 
-  // Redirect authenticated users from landing to dashboard
+  // Redirect authenticated users from landing to dashboard or onboarding
   if (isLandingPage && isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    if (!onboardingChecked) return null; // wait for check
+    try {
+      const justRegistered = localStorage.getItem('justRegistered');
+      if (justRegistered) {
+        localStorage.removeItem('justRegistered');
+        return <Navigate to={'/onboarding'} replace />;
+      }
+    } catch (e) {}
+    return <Navigate to={onboardingComplete ? '/dashboard' : '/onboarding'} replace />;
   }
 
-  // If authenticated and on login page, redirect to dashboard
+  // If authenticated and on login page, redirect to dashboard or onboarding
   if (isAuthenticated && isLoginPage) {
-    return <Navigate to="/dashboard" replace />;
+    if (!onboardingChecked) return null;
+    try {
+      const justRegistered = localStorage.getItem('justRegistered');
+      if (justRegistered) {
+        localStorage.removeItem('justRegistered');
+        return <Navigate to={'/onboarding'} replace />;
+      }
+    } catch (e) {}
+    return <Navigate to={onboardingComplete ? '/dashboard' : '/onboarding'} replace />;
   }
 
   // If not authenticated and not on public page, redirect to landing
   if (!isAuthenticated && !isPublicPage) {
     return <Navigate to="/" replace />;
+  }
+
+  // Hard guard: authenticated users must complete onboarding first
+  if (isAuthenticated && onboardingChecked && !onboardingComplete && !isOnboardingPage) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return (
@@ -254,16 +312,18 @@ function Layout() {
           {/* Trip-specific routes */}
           <Route path="/trip/:tripId" element={<TripSummary />} />
           <Route path="/trip/:tripId/itinerary" element={<Itinerary />} />
+          <Route path="/trip/:tripId/hotels" element={<TripHotels />} />
           <Route path="/trip/:tripId/reviews" element={<PlaceReviewsPage />} />
           <Route path="/trip/:tripId/assistant" element={<Assistant />} />
           <Route path="/trip/:tripId/local-guide" element={<LocalGuide />} />
           <Route path="/trip/:tripId/emergency" element={<Emergency />} />
           <Route path="/trip/:tripId/readiness" element={<TravelReadiness />} />
-          <Route path="/trip/:tripId/vr" element={<VRPreview />} />
+          <Route path="/trip/:tripId/vr-preview" element={<VRPreview />} />
+          <Route path="/trip/:tripId/hotel-vr" element={<HotelVR />} />
           
           {/* Global routes */}
+          <Route path="/explore-vr" element={<VRPreview />} />
           <Route path="/emergency" element={<Emergency />} />
-          <Route path="/vr-preview" element={<VRPreview />} />
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -1,134 +1,266 @@
-const { PrismaClient } = require('@prisma/client');
-
+const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-// Get user ID from command line argument
-const USER_ID = process.argv[2];
+function futureDate(monthOffset = 1, day = 15, hour = 10) {
+  const now = new Date();
+  return new Date(
+    now.getFullYear(),
+    now.getMonth() + monthOffset,
+    day,
+    hour,
+    0,
+    0
+  );
+}
+
+async function clearExisting() {
+
+  console.log("Deleting old demo data...");
+  await prisma.hotel.deleteMany({});
+  await prisma.destination.deleteMany({});
+
+}
+
+function makeFlight(origin, destination, airline, number, depart, arrive, price) {
+
+  return {
+    Response: {
+      TraceId: `mock-${origin}-${destination}-${Date.now()}`,
+      Results: [
+        [
+          {
+            ResultIndex: `${origin}-${destination}-${number}`,
+            Airline: airline,
+            FlightNumber: number,
+            Origin: origin,
+            Destination: destination,
+            DepartureTime: depart.toISOString(),
+            ArrivalTime: arrive.toISOString(),
+            Duration: `${Math.floor((arrive - depart) / 3600000)}h`,
+            Fare: {
+              Currency: "USD",
+              PublishedFare: price,
+              BaseFare: Math.round(price * 0.85),
+              Taxes: Math.round(price * 0.15)
+            },
+            Segments: [
+              {
+                Origin: origin,
+                Destination: destination,
+                Airline: airline,
+                FlightNumber: number,
+                DepartureTime: depart.toISOString(),
+                ArrivalTime: arrive.toISOString(),
+                Cabin: "Economy"
+              }
+            ]
+          }
+        ]
+      ]
+    }
+  };
+
+}
+
+async function seedDestination(data) {
+
+  console.log("Seeding destination:", data.name);
+
+  await prisma.destination.create({
+    data: {
+      name: data.name,
+      highlights: data.highlights,
+      // store as an array of destination VR assets
+      vr_assets: data.destinationVR
+    }
+  });
+
+  for (let i = 1; i <= 5; i++) {
+
+    await prisma.hotel.create({
+
+      data: {
+
+        name: `${data.name} Grand Hotel ${i}`,
+
+        area: "City Center",
+
+        destination: data.name,
+
+        priceRange: `$${150 + i * 40}`,
+
+        rating: 4 + i * 0.1,
+
+        // store hotel's VR assets as an array
+        vr_assets: data.hotelVR || []
+
+      }
+
+    });
+
+  }
+
+  // Flight inventory seeding removed (flights subsystem deprecated)
+
+}
 
 async function main() {
-  if (!USER_ID) {
-    console.log('❌ Please provide a user ID as argument');
-    console.log('Usage: npm run seed <user_id>');
-    console.log('Example: npm run seed abc123-def456-ghi789');
-    process.exit(1);
-  }
 
-  console.log('🌱 Starting database seed...');
-  console.log(`📝 Adding trips for user: ${USER_ID}`);
+  await clearExisting();
 
-  // Verify user exists
-  const user = await prisma.user.findUnique({
-    where: { id: USER_ID }
+  await seedDestination({
+
+    name: "Paris",
+
+    code: "CDG",
+
+    highlights: [
+      "Eiffel Tower",
+      "Louvre Museum",
+      "Seine River"
+    ],
+
+    destinationVR: [
+      {
+        id: "paris-d1",
+        name: "Eiffel Tower 360",
+        type: "image",
+        panorama:
+          "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1920&q=80",
+        thumbnail:
+          "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=400&q=60"
+      }
+    ],
+
+    hotelVR: [
+      {
+        id: "paris-h1",
+        name: "Luxury Paris Hotel",
+        type: "kuula",
+        embed_url:
+          "https://kuula.co/share/hzjcg?fs=1&vr=0&sd=1",
+        thumbnail:
+          "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=60"
+      }
+    ]
+
   });
 
-  if (!user) {
-    console.log('❌ User not found with ID:', USER_ID);
-    process.exit(1);
-  }
+  await seedDestination({
 
-  console.log('✅ Found user:', user.email);
+    name: "Dubai",
 
-  // Create two demo trips
-  const trip1 = await prisma.trip.create({
-    data: {
-      user_id: USER_ID,
-      destination: 'Paris, France',
-      start_date: new Date('2026-02-10'),
-      end_date: new Date('2026-02-17'),
-      booking_id: 'RM-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-      status: 'upcoming',
-    },
+    code: "DXB",
+
+    highlights: [
+      "Burj Khalifa",
+      "Desert Safari"
+    ],
+
+    destinationVR: [
+      {
+        id: "dubai-d1",
+        name: "Dubai Skyline",
+        type: "image",
+        panorama:
+          "https://images.unsplash.com/photo-1504215680853-026ed2a45def?auto=format&fit=crop&w=1920&q=80",
+        thumbnail:
+          "https://images.unsplash.com/photo-1504215680853-026ed2a45def?auto=format&fit=crop&w=400&q=60"
+      }
+    ],
+
+    hotelVR: [
+      {
+        id: "dubai-h1",
+        name: "Dubai Luxury Room",
+        type: "image",
+        panorama:
+          "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1920&q=80",
+        thumbnail:
+          "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=60"
+      }
+    ]
+
   });
 
-  console.log('✅ Created trip 1:', trip1.destination);
+  await seedDestination({
 
-  const trip2 = await prisma.trip.create({
-    data: {
-      user_id: USER_ID,
-      destination: 'Tokyo, Japan',
-      start_date: new Date('2026-03-15'),
-      end_date: new Date('2026-03-25'),
-      booking_id: 'RM-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-      status: 'planning',
-    },
+    name: "Tokyo",
+
+    code: "HND",
+
+    highlights: [
+      "Shibuya Crossing",
+      "Tokyo Tower"
+    ],
+
+    destinationVR: [
+      {
+        id: "tokyo-d1",
+        name: "Tokyo Temple",
+        type: "image",
+        panorama:
+          "https://images.unsplash.com/photo-1549693578-d683be217e58?auto=format&fit=crop&w=1920&q=80",
+        thumbnail:
+          "https://images.unsplash.com/photo-1549693578-d683be217e58?auto=format&fit=crop&w=400&q=60"
+      }
+    ],
+
+    hotelVR: [
+      {
+        id: "tokyo-h1",
+        name: "Tokyo Hotel Room",
+        type: "image",
+        panorama:
+          "https://images.unsplash.com/photo-1549693578-d683be217e58?auto=format&fit=crop&w=1920&q=80",
+        thumbnail:
+          "https://images.unsplash.com/photo-1549693578-d683be217e58?auto=format&fit=crop&w=400&q=60"
+      }
+    ]
+
   });
 
-  console.log('✅ Created trip 2:', trip2.destination);
+  await seedDestination({
 
-  // Create destination data for Paris
-  await prisma.destination.upsert({
-    where: { name: 'Paris' },
-    update: {},
-    create: {
-      name: 'Paris',
-      highlights: [
-        'Eiffel Tower',
-        'Louvre Museum',
-        'Notre-Dame Cathedral',
-        'Champs-Élysées',
-        'Montmartre',
-      ],
-      local_tips: [
-        'Most cafes include service charge - no need to tip extra',
-        'Metro is the fastest way to get around',
-        'Many museums are free on first Sunday of month',
-        'Learn basic French greetings - locals appreciate it',
-      ],
-      emergency_contacts: {
-        police: '17',
-        ambulance: '15',
-        fire: '18',
-        embassy_us: '+33 1 43 12 22 22',
-        embassy_india: '+33 1 40 50 70 70',
-      },
-      vr_assets: [],
-    },
+    name: "New York",
+
+    code: "JFK",
+
+    highlights: [
+      "Times Square",
+      "Statue of Liberty"
+    ],
+
+    destinationVR: [
+      {
+        id: "ny-d1",
+        name: "NY Skyline",
+        type: "image",
+        panorama:
+          "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=1920&q=80",
+        thumbnail:
+          "https://images.unsplash.com/photo-1467269204594-9661b134dd2b?auto=format&fit=crop&w=400&q=60"
+      }
+    ],
+
+    hotelVR: [
+      {
+        id: "ny-h1",
+        name: "NY Luxury Suite",
+        type: "image",
+        panorama:
+          "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1920&q=80",
+        thumbnail:
+          "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=400&q=60"
+      }
+    ]
+
   });
 
-  console.log('✅ Created Paris destination data');
+  console.log("Demo data seeded successfully");
 
-  // Create destination data for Tokyo
-  await prisma.destination.upsert({
-    where: { name: 'Tokyo' },
-    update: {},
-    create: {
-      name: 'Tokyo',
-      highlights: [
-        'Senso-ji Temple',
-        'Shibuya Crossing',
-        'Tokyo Skytree',
-        'Meiji Shrine',
-        'Tsukiji Fish Market',
-      ],
-      local_tips: [
-        'Get a Suica/Pasmo card for easy transit',
-        'No tipping culture in Japan',
-        'Remove shoes before entering homes and some restaurants',
-        'Convenience stores (konbini) are excellent for quick meals',
-      ],
-      emergency_contacts: {
-        police: '110',
-        ambulance: '119',
-        fire: '119',
-        embassy_us: '+81 3 3224 5000',
-        embassy_india: '+81 3 3262 2391',
-      },
-      vr_assets: [],
-    },
-  });
-
-  console.log('✅ Created Tokyo destination data');
-
-  console.log('');
-  console.log('🎉 Seed completed successfully!');
-  console.log(`   Added 2 trips for user: ${user.email}`);
 }
 
 main()
-  .catch((e) => {
-    console.error('❌ Seed failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

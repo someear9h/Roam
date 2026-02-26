@@ -26,6 +26,17 @@ const TIME_ICONS = {
   evening: { icon: Moon, color: 'text-indigo-500', bg: 'bg-indigo-50' }
 };
 
+// Format a direct date string like '2026-02-28' into 'Sat, Feb 28'
+const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
 export default function Itinerary() {
   const { tripId } = useParams();
   const [activeDay, setActiveDay] = useState(1);
@@ -35,6 +46,63 @@ export default function Itinerary() {
   const [expandedDays, setExpandedDays] = useState({ 1: true });
   const [currentTrip, setCurrentTrip] = useState(null);
   const [preferences, setPreferences] = useState(null);
+
+  // Safely parse and normalize ai_itinerary into { days: [...] }
+  const parseAndNormalizeItinerary = (raw) => {
+    if (!raw) return null;
+    let parsed = raw;
+    if (typeof raw === 'string') {
+      try {
+        parsed = JSON.parse(raw);
+      } catch (err) {
+        console.error('Failed to parse ai_itinerary JSON:', err);
+        return null;
+      }
+    }
+
+    // If parsed is already in expected shape with days, normalize activities
+    const normalizeDaysArray = (daysArr) => {
+      if (!Array.isArray(daysArr)) return [];
+      return daysArr.map(d => {
+        const activitiesRaw = Array.isArray(d.activities) ? d.activities : [];
+        const activities = activitiesRaw.map(a => {
+          if (!a && a !== 0) return { name: '' };
+          if (typeof a === 'string') return { name: a };
+          if (typeof a === 'object') {
+            // prefer existing `name`, but fall back to `activity` or other keys
+            const name = a.name || a.activity || a.title || '';
+            return { ...a, name };
+          }
+          return { name: String(a) };
+        });
+
+        return {
+          day: d.day,
+          date: d.date,
+          theme: d.theme,
+          activities
+        };
+      });
+    };
+
+    // If parsed directly contains days array
+    if (parsed.days && Array.isArray(parsed.days)) {
+      return { days: normalizeDaysArray(parsed.days) };
+    }
+
+    // If parsed contains `itinerary` key (old backend format)
+    if (parsed.itinerary && Array.isArray(parsed.itinerary)) {
+      return { days: normalizeDaysArray(parsed.itinerary) };
+    }
+
+    // If parsed is an array of day objects
+    if (Array.isArray(parsed)) {
+      return { days: normalizeDaysArray(parsed) };
+    }
+
+    // Unknown shape - try to be tolerant: return as-is if it has activities shaped already
+    return parsed;
+  };
 
   useEffect(() => {
     loadData();
@@ -51,12 +119,10 @@ export default function Itinerary() {
           const trip = tripRes.data.data;
           setCurrentTrip(trip);
           
-          try {
-            const itineraryRes = await aiAPI.getItinerary(trip.id);
-            if (itineraryRes.data.success && itineraryRes.data.data) {
-              setItinerary(itineraryRes.data.data);
-            }
-          } catch (e) {}
+          if (trip.ai_itinerary) {
+            const normalized = parseAndNormalizeItinerary(trip.ai_itinerary);
+            if (normalized) setItinerary(normalized);
+          }
 
           try {
             const prefsRes = await preferencesAPI.getPreferences();
@@ -78,14 +144,19 @@ export default function Itinerary() {
     
     setIsGenerating(true);
     try {
-      const response = await aiAPI.generateItinerary({
-        tripId: currentTrip.id,
-        preferences: preferences || {}
-      });
-      
+      const response = await aiAPI.generateItinerary(currentTrip.id);
+
       if (response.data.success) {
-        setItinerary(response.data.data.plan);
-        setExpandedDays({ 1: true });
+        const updatedTrip = await tripAPI.getTrip(currentTrip.id);
+
+        if (updatedTrip.data.success) {
+          const trip = updatedTrip.data.data;
+          setCurrentTrip(trip);
+
+          const normalized = parseAndNormalizeItinerary(trip.ai_itinerary);
+          if (normalized) setItinerary(normalized);
+          setExpandedDays({ 1: true });
+        }
       }
     } catch (error) {
       console.error('Failed to generate itinerary:', error);
@@ -99,12 +170,7 @@ export default function Itinerary() {
     setActiveDay(dayNum);
   };
 
-  const formatDate = (dateStr, dayOffset = 0) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    date.setDate(date.getDate() + dayOffset);
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-  };
+  // removed offset-based formatting; using top-level `formatDate(dateStr)` instead
 
   const tripDays = currentTrip?.start_date && currentTrip?.end_date
     ? Math.ceil((new Date(currentTrip.end_date) - new Date(currentTrip.start_date)) / (1000 * 60 * 60 * 24)) + 1
@@ -196,12 +262,12 @@ export default function Itinerary() {
             {itinerary && (
               <div className="grid grid-cols-2 gap-3 mt-4">
                 <div className="bg-white/10 rounded-xl p-3 text-center">
-                  <p className="text-2xl font-bold">{itinerary.days?.length || tripDays}</p>
+                  <p className="text-2xl font-bold">{itinerary?.days?.length || tripDays}</p>
                   <p className="text-xs text-slate-400">Days</p>
                 </div>
                 <div className="bg-white/10 rounded-xl p-3 text-center">
                   <p className="text-2xl font-bold">
-                    {itinerary.days?.reduce((sum, day) => sum + (day.activities?.length || 0), 0) || 0}
+                    {itinerary?.days?.reduce((sum, day) => sum + (day.activities?.length || 0), 0) || 0}
                   </p>
                   <p className="text-xs text-slate-400">Activities</p>
                 </div>
@@ -230,12 +296,12 @@ export default function Itinerary() {
                   </div>
                   <div className="text-left">
                     <p className="font-semibold text-sm">Day {day}</p>
-                    <p className="text-xs text-slate-500">{formatDate(currentTrip.start_date, day - 1)}</p>
+                    <p className="text-xs text-slate-500">{formatDate(itinerary?.days?.[day - 1]?.date || currentTrip.start_date)}</p>
                   </div>
                 </div>
                 {itinerary?.days?.[day - 1]?.activities && (
                   <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
-                    {itinerary.days[day - 1].activities.length}
+                    {itinerary?.days?.[day - 1]?.activities?.length || 0}
                   </span>
                 )}
               </button>
@@ -249,12 +315,12 @@ export default function Itinerary() {
             <EmptyItinerary onGenerate={generateItinerary} isGenerating={isGenerating} destination={currentTrip.destination} />
           ) : (
             <div className="space-y-6">
-              {itinerary.days?.map((day, dayIndex) => (
+              {itinerary?.days?.map((day, dayIndex) => (
                 <DayCard 
                   key={dayIndex}
                   day={day}
                   dayNumber={dayIndex + 1}
-                  date={formatDate(currentTrip.start_date, dayIndex)}
+                  date={day.date}
                   isExpanded={expandedDays[dayIndex + 1]}
                   onToggle={() => toggleDay(dayIndex + 1)}
                 />
@@ -322,7 +388,7 @@ function DayCard({ day, dayNumber, date, isExpanded, onToggle }) {
           </div>
           <div className="text-left">
             <h3 className="text-xl font-bold text-gray-800">Day {dayNumber}</h3>
-            <p className="text-gray-500">{date} • {day.theme || `Exploring the city`}</p>
+            <p className="text-gray-500">{formatDate(date)} • {day.theme || `Exploring the city`}</p>
           </div>
         </div>
         <div className="flex items-center gap-4">

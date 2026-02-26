@@ -3,13 +3,24 @@ const router = express.Router();
 const aiController = require('../controllers/ai.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 
-router.post('/chat', authMiddleware, aiController.chat);
-router.post('/itinerary', authMiddleware, aiController.generateItinerary);
-router.get('/itinerary/:tripId', authMiddleware, aiController.getItinerary);
-router.post('/local-guide', authMiddleware, aiController.localGuide);
-router.post('/vr-explain', authMiddleware, aiController.vrExplain);
+
+router.post('/trips/:tripId/chat', authMiddleware, aiController.chat);
+
+
+router.post('/trips/:tripId/itinerary', authMiddleware, aiController.generateItinerary);
+router.get('/trips/:tripId/itinerary', authMiddleware, aiController.getItinerary);
+
+
+router.post('/trips/:tripId/local-guide', authMiddleware, aiController.localGuide);
+
+
+router.post('/trips/:tripId/vr-explain', authMiddleware, aiController.vrExplain);
+
+
+router.get('/trips/:tripId/chat-history', authMiddleware, aiController.getChatHistory);
+router.delete('/trips/:tripId/chat-history', authMiddleware, aiController.clearChatHistory);
+
+
 router.post('/ocr', authMiddleware, aiController.extractTextFromImage);
-router.get('/chat-history/:tripId', authMiddleware, aiController.getChatHistory);
-router.delete('/chat-history/:tripId', authMiddleware, aiController.clearChatHistory);
 
 module.exports = router;

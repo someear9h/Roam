@@ -1,180 +1,271 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const gemini = require('../services/gemini.service');
-const { tripMemorySchema, tripFeedbackSchema, tripSummarySchema } = require('../utils/validation');
+const { tripMemorySchema, tripFeedbackSchema } = require('../utils/validation');
 
-// Get trip memories
+function summaryCacheKey(tripId) {
+  return `trip_summary:${tripId}`;
+}
+
+/* =========================================
+   Helper: Validate Trip Ownership
+========================================= */
+async function validateTripOwnership(tripId, userId) {
+  const trip = await prisma.trip.findUnique({
+    where: { id: tripId },
+    select: { user_id: true }
+  });
+
+  if (!trip) {
+    const e = new Error('Trip not found');
+    e.status = 404;
+    throw e;
+  }
+  if (trip.user_id !== userId) {
+    const e = new Error('Unauthorized');
+    e.status = 403;
+    throw e;
+  }
+}
+
+/* =========================================
+   Get Trip Memories
+========================================= */
 exports.getMemories = async (req, res) => {
   const tripId = Number(req.params.tripId);
+
   if (isNaN(tripId)) {
     return res.status(400).json({ success: false, error: 'Invalid tripId' });
   }
 
-  const memories = await prisma.tripMemory.findMany({
-    where: { trip_id: tripId },
-    orderBy: { created_at: 'asc' },
-  });
+  try {
+    await validateTripOwnership(tripId, req.user.userId);
 
-  res.json({ success: true, data: memories });
+    const memories = await prisma.tripMemory.findMany({
+      where: { trip_id: tripId },
+      orderBy: { created_at: 'asc' }
+    });
+
+    res.json({ success: true, data: memories });
+
+  } catch (err) {
+    const status = err.status || (err.message === 'Trip not found' ? 404 : (err.message === 'Unauthorized' ? 403 : 500));
+    console.error('getMemories error:', err);
+    res.status(status).json({ success: false, error: err.message });
+  }
 };
 
-// Add a memory
+/* =========================================
+   Add Memory
+========================================= */
 exports.addMemory = async (req, res) => {
-  const result = tripMemorySchema.safeParse(req.body);
+  const tripId = Number(req.params.tripId);
+  const result = tripMemorySchema.safeParse({ ...req.body, trip_id: tripId });
+
   if (!result.success) {
     return res.status(400).json({ success: false, error: result.error.format() });
   }
 
-  const memory = await prisma.tripMemory.create({
-    data: result.data,
-  });
+  try {
+    await validateTripOwnership(result.data.trip_id, req.user.userId);
 
-  res.json({ success: true, data: memory });
+    const memory = await prisma.tripMemory.create({
+      data: result.data
+    });
+
+    res.json({ success: true, data: memory });
+
+  } catch (err) {
+    const status = err.status || (err.message === 'Trip not found' ? 404 : (err.message === 'Unauthorized' ? 403 : 500));
+    console.error('addMemory error:', err);
+    res.status(status).json({ success: false, error: err.message });
+  }
 };
 
-// Get trip feedback
-exports.getFeedback = async (req, res) => {
+/* =========================================
+   Submit Feedback
+========================================= */
+exports.submitFeedback = async (req, res) => {
+  const tripId = Number(req.params.tripId);
+  const result = tripFeedbackSchema.safeParse({ ...req.body, trip_id: tripId });
+
+  if (!result.success) {
+    return res.status(400).json({ success: false, error: result.error.format() });
+  }
+
+  try {
+    await validateTripOwnership(result.data.trip_id, req.user.userId);
+
+    const feedback = await prisma.tripFeedback.upsert({
+      where: { trip_id: result.data.trip_id },
+      update: result.data,
+      create: result.data
+    });
+
+    res.json({ success: true, data: feedback });
+
+  } catch (err) {
+    const status = err.status || (err.message === 'Trip not found' ? 404 : (err.message === 'Unauthorized' ? 403 : 500));
+    console.error('submitFeedback error:', err);
+    res.status(status).json({ success: false, error: err.message });
+  }
+};
+
+/* =========================================
+   Generate AI Summary (Gemini Optimized)
+========================================= */
+exports.generateSummary = async (req, res) => {
   const tripId = Number(req.params.tripId);
   if (isNaN(tripId)) {
     return res.status(400).json({ success: false, error: 'Invalid tripId' });
   }
 
-  const feedback = await prisma.tripFeedback.findUnique({
-    where: { trip_id: tripId },
-  });
-
-  res.json({ success: true, data: feedback });
-};
-
-// Submit trip feedback
-exports.submitFeedback = async (req, res) => {
-  const result = tripFeedbackSchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({ success: false, error: result.error.format() });
-  }
-
-  const feedback = await prisma.tripFeedback.upsert({
-    where: { trip_id: result.data.trip_id },
-    update: result.data,
-    create: result.data,
-  });
-
-  res.json({ success: true, data: feedback });
-};
-
-// Generate AI trip summary
-exports.generateSummary = async (req, res) => {
-  const result = tripSummarySchema.safeParse(req.body);
-  if (!result.success) {
-    return res.status(400).json({ success: false, error: result.error.format() });
-  }
-  const { tripId } = result.data;
-
-  const trip = await prisma.trip.findUnique({ 
-    where: { id: tripId },
-    include: { itinerary: true }
-  });
-  if (!trip) {
-    return res.status(404).json({ success: false, error: 'Trip not found' });
-  }
-
-  const memories = await prisma.tripMemory.findMany({
-    where: { trip_id: tripId },
-  });
-
-  const chatLog = await prisma.chatLog.findUnique({
-    where: { trip_id: tripId },
-  });
-
-  const user = await prisma.user.findUnique({
-    where: { id: req.user.userId },
-    select: { language: true, name: true },
-  });
-
-  const context = { 
-    trip, 
-    itinerary: trip.itinerary?.plan,
-    memories,
-    chatInteractions: chatLog?.messages?.length || 0,
-    user
-  };
-
-  const prompt = gemini.buildPrompt(
-    `Generate a warm, personalized trip summary for the user. Include:
-    - Trip highlights and memorable moments
-    - Places visited (from itinerary)
-    - Key statistics (duration, activities)
-    - A heartfelt closing message
-    - 2-3 future destination suggestions based on their preferences
-    
-    Return as JSON:
-    {
-      "summary_title": "Your Adventure in [Destination]",
-      "highlights": ["highlight1", "highlight2"],
-      "places_visited": ["place1", "place2"],
-      "stats": {"days": X, "activities": Y, "memories": Z},
-      "personal_message": "...",
-      "future_suggestions": [
-        {"destination": "...", "reason": "..."},
-      ]
-    }`,
-    context,
-    'Generate a trip summary for my completed trip.'
-  );
-
-  const responseText = await gemini.generateContent(prompt);
-
-  let summary;
   try {
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      summary = JSON.parse(jsonMatch[0]);
-    }
-  } catch (e) {
-    summary = { 
-      summary_title: `Your Trip to ${trip.destination}`,
-      personal_message: responseText,
-      highlights: [],
-      places_visited: [],
-      stats: {},
-      future_suggestions: []
-    };
-  }
+    await validateTripOwnership(tripId, req.user.userId);
 
-  res.json({ success: true, data: summary });
+    const trip = await prisma.trip.findUnique({ where: { id: tripId } });
+
+    if (!trip) {
+      return res.status(404).json({ success: false, error: 'Trip not found' });
+    }
+
+    // ✅ Return cached summary if exists (AICache)
+    const cached = await prisma.aICache.findUnique({ where: { key: summaryCacheKey(tripId) } });
+    if (cached?.response) {
+      return res.json({ success: true, data: cached.response });
+    }
+
+    const memories = await prisma.tripMemory.findMany({
+      where: { trip_id: tripId }
+    });
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      select: { language: true, name: true }
+    });
+
+    const context = {
+      trip,
+      itinerary: trip.ai_itinerary || null,
+      memories,
+      user
+    };
+
+    const prompt = gemini.buildPrompt(
+      `Generate a warm, personalized trip summary.
+       Return ONLY valid JSON.`,
+      context,
+      "Generate trip summary."
+    );
+
+    const responseText = await gemini.generateContent(prompt);
+
+    let summary;
+    try {
+      const match = responseText.match(/\{[\s\S]*\}/);
+      summary = match ? JSON.parse(match[0]) : null;
+    } catch {
+      summary = {
+        summary_title: `Your Trip to ${trip.destination}`,
+        personal_message: responseText,
+        highlights: [],
+        places_visited: [],
+        stats: {},
+        future_suggestions: []
+      };
+    }
+
+    // ✅ Store summary (prevents reusing Gemini)
+    await prisma.aICache.upsert({
+      where: { key: summaryCacheKey(tripId) },
+      update: { response: summary },
+      create: { key: summaryCacheKey(tripId), response: summary }
+    });
+
+    res.json({ success: true, data: summary });
+
+  } catch (err) {
+    const status = err.status || (err.message === 'Trip not found' ? 404 : (err.message === 'Unauthorized' ? 403 : 500));
+    console.error('generateSummary error:', err);
+    res.status(status).json({ success: false, error: err.message });
+  }
 };
 
-// Get full trip summary (combined data)
+/* =========================================
+   Get Full Summary
+========================================= */
 exports.getFullSummary = async (req, res) => {
   const tripId = Number(req.params.tripId);
+
   if (isNaN(tripId)) {
     return res.status(400).json({ success: false, error: 'Invalid tripId' });
   }
 
-  const trip = await prisma.trip.findUnique({ 
-    where: { id: tripId },
-    include: { itinerary: true }
-  });
-  if (!trip) {
-    return res.status(404).json({ success: false, error: 'Trip not found' });
+  try {
+    await validateTripOwnership(tripId, req.user.userId);
+
+    const trip = await prisma.trip.findUnique({ where: { id: tripId } });
+
+    const memories = await prisma.tripMemory.findMany({
+      where: { trip_id: tripId },
+      orderBy: { created_at: 'asc' }
+    });
+
+    const feedback = await prisma.tripFeedback.findFirst({
+      where: { trip_id: tripId }
+    });
+
+    const cached = await prisma.aICache.findUnique({ where: { key: summaryCacheKey(tripId) } });
+
+    res.json({
+      success: true,
+      data: {
+        trip,
+        itinerary: trip?.ai_itinerary || null,
+        memories,
+        feedback,
+        summary: cached?.response || null
+      }
+    });
+
+  } catch (err) {
+    const status = err.status || (err.message === 'Trip not found' ? 404 : (err.message === 'Unauthorized' ? 403 : 500));
+    console.error('getFullSummary error:', err);
+    res.status(status).json({ success: false, error: err.message });
+  }
+};
+
+/* =========================================
+   Get Feedback
+========================================= */
+exports.getFeedback = async (req, res) => {
+  const tripId = Number(req.params.tripId);
+
+  if (isNaN(tripId)) {
+    return res.status(400).json({
+      success: false,
+      error: "Invalid tripId"
+    });
   }
 
-  const memories = await prisma.tripMemory.findMany({
-    where: { trip_id: tripId },
-    orderBy: { created_at: 'asc' },
-  });
+  try {
+    await validateTripOwnership(tripId, req.user.userId);
 
-  const feedback = await prisma.tripFeedback.findUnique({
-    where: { trip_id: tripId },
-  });
+    const feedback = await prisma.tripFeedback.findFirst({
+      where: { trip_id: tripId }
+    });
 
-  res.json({ 
-    success: true, 
-    data: {
-      trip,
-      itinerary: trip.itinerary?.plan,
-      memories,
-      feedback
-    }
-  });
+    res.json({
+      success: true,
+      data: feedback
+    });
+
+  } catch (err) {
+    const status = err.status || (err.message === 'Trip not found' ? 404 : (err.message === 'Unauthorized' ? 403 : 500));
+    console.error('getFeedback error:', err);
+    res.status(status).json({
+      success: false,
+      error: err.message
+    });
+  }
 };

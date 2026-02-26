@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import api, { destinationAPI } from '../services/api';
 import { 
   ArrowLeft, MapPin, Star, Heart, Share2, Eye, Compass, 
   Building, Wifi, Tv, Wind, Coffee, Utensils, Bath, Home,
@@ -7,133 +8,47 @@ import {
   Play, Pause, RotateCcw, Info
 } from 'lucide-react';
 
-// Real 360° Equirectangular Panorama Images (Free to use)
-const VR_DESTINATIONS = [
-  {
-    id: 1,
-    name: 'Mountain Panorama',
-    location: 'Swiss Alps, Switzerland',
-    rating: 4.95,
-    reviews: 3847,
-    // Using actual 360° panorama from Polyhaven/Pixexid
-    panorama: 'https://cdn.pixabay.com/photo/2016/01/10/11/35/panoramic-1131620_1280.jpg',
-    thumbnail: 'https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=400',
-    description: 'Experience breathtaking 360° views of the majestic Swiss Alps.',
-    highlights: ['Mountains', 'Snow', 'Nature', 'Hiking'],
-  },
-  {
-    id: 2,
-    name: 'Tropical Beach',
-    location: 'Maldives',
-    rating: 4.97,
-    reviews: 5234,
-    panorama: 'https://cdn.pixabay.com/photo/2017/12/15/13/51/polynesia-3021072_1280.jpg',
-    thumbnail: 'https://images.pexels.com/photos/1450353/pexels-photo-1450353.jpeg?auto=compress&cs=tinysrgb&w=400',
-    description: 'Crystal clear waters and pristine beaches in paradise.',
-    highlights: ['Beach', 'Ocean', 'Relaxation', 'Snorkeling'],
-  },
-  {
-    id: 3,
-    name: 'Ancient Temple',
-    location: 'Kyoto, Japan',
-    rating: 4.92,
-    reviews: 4123,
-    panorama: 'https://cdn.pixabay.com/photo/2019/07/21/07/12/temple-4352219_1280.jpg',
-    thumbnail: 'https://images.pexels.com/photos/1440476/pexels-photo-1440476.jpeg?auto=compress&cs=tinysrgb&w=400',
-    description: 'Step into the serene beauty of traditional Japanese architecture.',
-    highlights: ['Culture', 'History', 'Gardens', 'Temples'],
-  },
-  {
-    id: 4,
-    name: 'Desert Sunset',
-    location: 'Sahara, Morocco',
-    rating: 4.88,
-    reviews: 2156,
-    panorama: 'https://cdn.pixabay.com/photo/2018/03/15/16/11/background-3228704_1280.jpg',
-    thumbnail: 'https://images.pexels.com/photos/1001435/pexels-photo-1001435.jpeg?auto=compress&cs=tinysrgb&w=400',
-    description: 'Witness the magical colors of a Saharan sunset.',
-    highlights: ['Desert', 'Sunset', 'Adventure', 'Photography'],
-  },
-  {
-    id: 5,
-    name: 'Northern Lights',
-    location: 'Tromsø, Norway',
-    rating: 4.99,
-    reviews: 6789,
-    panorama: 'https://cdn.pixabay.com/photo/2017/02/07/17/52/aurora-2046158_1280.jpg',
-    thumbnail: 'https://images.pexels.com/photos/1933239/pexels-photo-1933239.jpeg?auto=compress&cs=tinysrgb&w=400',
-    description: 'Experience the magical Aurora Borealis in immersive 360°.',
-    highlights: ['Aurora', 'Night Sky', 'Winter', 'Nature'],
-  },
-];
-
-// Hotel Rooms with multiple 360° views
-const HOTEL_ROOMS = [
-  {
-    id: 101,
-    name: 'Ocean View Suite',
-    hotelName: 'Grand Resort Maldives',
-    location: 'Maldives',
-    rating: 4.96,
-    reviews: 892,
-    pricePerNight: 750,
-    views: [
-      { id: 'living', name: 'Living Room', panorama: 'https://cdn.pixabay.com/photo/2016/11/30/08/48/bedroom-1872196_1280.jpg', thumbnail: 'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 'bedroom', name: 'Bedroom', panorama: 'https://cdn.pixabay.com/photo/2016/11/30/08/48/bedroom-1872196_1280.jpg', thumbnail: 'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 'bathroom', name: 'Spa Bathroom', panorama: 'https://cdn.pixabay.com/photo/2017/02/24/12/24/bathroom-2094733_1280.jpg', thumbnail: 'https://images.pexels.com/photos/1910472/pexels-photo-1910472.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 'terrace', name: 'Ocean Deck', panorama: 'https://cdn.pixabay.com/photo/2017/12/15/13/51/polynesia-3021072_1280.jpg', thumbnail: 'https://images.pexels.com/photos/1450353/pexels-photo-1450353.jpeg?auto=compress&cs=tinysrgb&w=400' },
-    ],
-    amenities: ['wifi', 'tv', 'aircon', 'pool', 'restaurant'],
-    description: 'Overwater villa with private infinity pool and stunning ocean views.',
-  },
-  {
-    id: 102,
-    name: 'Alpine Chalet',
-    hotelName: 'Swiss Mountain Lodge',
-    location: 'Swiss Alps',
-    rating: 4.89,
-    reviews: 456,
-    pricePerNight: 520,
-    views: [
-      { id: 'living', name: 'Lounge Area', panorama: 'https://cdn.pixabay.com/photo/2017/03/28/12/10/chairs-2181947_1280.jpg', thumbnail: 'https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 'bedroom', name: 'Master Suite', panorama: 'https://cdn.pixabay.com/photo/2016/11/30/08/48/bedroom-1872196_1280.jpg', thumbnail: 'https://images.pexels.com/photos/1743229/pexels-photo-1743229.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 'balcony', name: 'Mountain View', panorama: 'https://cdn.pixabay.com/photo/2016/01/10/11/35/panoramic-1131620_1280.jpg', thumbnail: 'https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=400' },
-    ],
-    amenities: ['wifi', 'fireplace', 'spa', 'restaurant'],
-    description: 'Traditional alpine chalet with panoramic mountain views and private spa.',
-  },
-  {
-    id: 103,
-    name: 'Paris Penthouse',
-    hotelName: 'Le Grand Hotel Paris',
-    location: 'Paris, France',
-    rating: 4.94,
-    reviews: 1234,
-    pricePerNight: 980,
-    views: [
-      { id: 'salon', name: 'Grand Salon', panorama: 'https://cdn.pixabay.com/photo/2016/11/18/17/46/house-1836070_1280.jpg', thumbnail: 'https://images.pexels.com/photos/1457842/pexels-photo-1457842.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 'bedroom', name: 'Royal Suite', panorama: 'https://cdn.pixabay.com/photo/2016/11/30/08/48/bedroom-1872196_1280.jpg', thumbnail: 'https://images.pexels.com/photos/164595/pexels-photo-164595.jpeg?auto=compress&cs=tinysrgb&w=400' },
-      { id: 'terrace', name: 'City Terrace', panorama: 'https://cdn.pixabay.com/photo/2018/04/25/09/26/eiffel-tower-3349075_1280.jpg', thumbnail: 'https://images.pexels.com/photos/338515/pexels-photo-338515.jpeg?auto=compress&cs=tinysrgb&w=400' },
-    ],
-    amenities: ['wifi', 'tv', 'butler', 'restaurant', 'spa'],
-    description: 'Iconic penthouse with breathtaking views of the Eiffel Tower.',
-  },
-];
+// Dynamic VR assets will be loaded from backend per-trip
+// Destination and hotel lists are fetched at runtime for the given tripId
 
 const AMENITY_ICONS = { wifi: Wifi, tv: Tv, aircon: Wind, coffee: Coffee, restaurant: Utensils, pool: Bath, spa: Bath, fireplace: Home, butler: Star };
 
 export default function VRPreview() {
-  const [searchParams] = useSearchParams();
+  // route parameters (tripId) - try multiple fallbacks for explore routes
+  const params = useParams();
+  let tripId = params?.tripId;
+
+  // fallback: ?tripId=123 in query string
+  if (!tripId) {
+    try {
+      const qp = new URLSearchParams(window.location.search);
+      const q = qp.get('tripId');
+      if (q) tripId = q;
+    } catch (e) {}
+  }
+
+  // fallback: extract from pathname like /trip/123/... when component mounted under a different route
+  if (!tripId) {
+    const m = window.location.pathname.match(/\/trip\/(\d+)/);
+    if (m) tripId = m[1];
+  }
+
+  // read optional view selector from query string
+  const qp = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const requestedViewIndex = qp ? Number(qp.get('view') || 0) : 0;
   const [activeTab, setActiveTab] = useState('destinations');
-  const [selectedItem, setSelectedItem] = useState(VR_DESTINATIONS[0]);
+  const [destinations, setDestinations] = useState([]);
+  const [selectedItem, setSelectedItem] = useState(null);
   const [selectedViewIndex, setSelectedViewIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isAutoRotate, setIsAutoRotate] = useState(true);
   const [favorites, setFavorites] = useState([]);
   const [aframeLoaded, setAframeLoaded] = useState(false);
+  const [loadingAssets, setLoadingAssets] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const containerRef = useRef(null);
   const sceneRef = useRef(null);
-
+  
   // Load A-Frame script
   useEffect(() => {
     if (window.AFRAME) {
@@ -157,47 +72,167 @@ export default function VRPreview() {
     };
   }, []);
 
-  // Update A-Frame scene when panorama changes
+  // Update A-Frame scene when panorama changes (for image-type assets)
   useEffect(() => {
-    if (!aframeLoaded || !sceneRef.current) return;
+    if (!sceneRef.current) return;
 
-    const panoramaUrl = getCurrentPanorama();
-    
-    // Create/update A-Frame scene
-    sceneRef.current.innerHTML = `
-      <a-scene 
-        embedded 
-        vr-mode-ui="enabled: true; enterVRButton: #enterVRButton; exitVRButton: #exitVRButton"
-        loading-screen="enabled: false"
-        renderer="antialias: true; alpha: true"
-      >
-        <a-assets>
-          <img id="sky-img" src="${panoramaUrl}" crossorigin="anonymous">
-        </a-assets>
-        
-        <a-sky 
-          src="#sky-img" 
-          rotation="0 -90 0"
-          ${isAutoRotate ? 'animation="property: rotation; to: 0 270 0; dur: 100000; easing: linear; loop: true"' : ''}
-        ></a-sky>
-        
-        <a-camera>
-          <a-cursor 
-            color="#FF5A1F" 
-            fuse="false" 
-            raycaster="objects: .clickable"
-          ></a-cursor>
-        </a-camera>
-      </a-scene>
-    `;
+    const buildAFrame = (panoramaUrl) => {
+      sceneRef.current.innerHTML = `
+        <a-scene 
+          embedded 
+          vr-mode-ui="enabled: true; enterVRButton: #enterVRButton; exitVRButton: #exitVRButton"
+          loading-screen="enabled: false"
+          renderer="antialias: true; alpha: true"
+        >
+          <a-assets>
+            <img id="sky-img" src="${panoramaUrl}" crossorigin="anonymous">
+          </a-assets>
+          <a-sky 
+            src="#sky-img" 
+            rotation="0 -90 0"
+            ${isAutoRotate ? 'animation="property: rotation; to: 0 270 0; dur: 100000; easing: linear; loop: true"' : ''}
+          ></a-sky>
+          <a-camera>
+            <a-cursor 
+              color="#FF5A1F" 
+              fuse="false" 
+              raycaster="objects: .clickable"
+            ></a-cursor>
+          </a-camera>
+        </a-scene>
+      `;
+    };
+
+    // If selected item is a hotel with multiple views, prefer the view panorama
+    if (selectedItem) {
+      const currentView = selectedItem.views?.[selectedViewIndex];
+      const isKuulaView = currentView?.type === 'kuula' || selectedItem.type === 'kuula';
+      if (isKuulaView) {
+        // For kuula embeds we don't render A-Frame
+        sceneRef.current.innerHTML = '';
+        return;
+      }
+
+      // Determine panorama URL
+      const panoramaUrl = currentView?.panorama || selectedItem.panorama || '';
+      if (!panoramaUrl) {
+        sceneRef.current.innerHTML = '';
+        return;
+      }
+
+      // If A-Frame not yet loaded, wait until it's available
+      if (!aframeLoaded) {
+        sceneRef.current.innerHTML = '';
+        return;
+      }
+
+      buildAFrame(panoramaUrl);
+    }
   }, [aframeLoaded, selectedItem, selectedViewIndex, isAutoRotate]);
 
   const getCurrentPanorama = () => {
-    if (activeTab === 'hotels' && selectedItem?.views) {
-      return selectedItem.views[selectedViewIndex]?.panorama || selectedItem.views[0]?.panorama;
-    }
-    return selectedItem?.panorama || '';
+    // Return panorama URL for A-Frame usage
+    if (!selectedItem) return '';
+    const view = selectedItem.views?.[selectedViewIndex];
+    if (view && view.panorama) return view.panorama;
+    return selectedItem.panorama || '';
   };
+
+  // Fetch VR assets using route param
+  
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingAssets(true);
+    setFetchError(null);
+
+    const normalizeAsset = (asset, fallbackName, index) => {
+      const obj = typeof asset === 'string' ? { panorama: asset } : (asset || {});
+      const panorama = obj.panorama || obj.url || obj.image || '';
+      const embed_url = obj.embed_url || obj.embedUrl || '';
+      const thumbnail = obj.thumbnail || obj.preview || '';
+      const type = obj.type || (embed_url ? 'kuula' : 'image');
+
+      return {
+        id: obj.id || `${fallbackName || 'asset'}-${index}`,
+        name: obj.name || fallbackName || 'View',
+        location: obj.location || fallbackName || '',
+        thumbnail,
+        panorama,
+        embed_url,
+        type,
+        rating: obj.rating || 4.8,
+        highlights: obj.highlights || [],
+        amenities: obj.amenities || [],
+        views: obj.views || []
+      };
+    };
+
+    const loadTripAssets = async () => {
+      try {
+        const destResp = await api.get(`/destination/trip/${tripId}/vr-assets`);
+        const destData = destResp?.data?.data ?? [];
+
+        // destData can be array of assets or object with destinations key
+        let destItems = [];
+        if (Array.isArray(destData)) {
+          destItems = destData.map((a, i) => normalizeAsset(a, (a?.name || a?.location || `Destination`), i));
+        } else if (Array.isArray(destData.destinations)) {
+          destItems = destData.destinations.map((a, i) => normalizeAsset(a, a?.name || a?.location || `Destination`, i));
+        } else {
+          // try to find array inside
+          const arr = Object.values(destData).find(v => Array.isArray(v)) || [];
+          destItems = arr.map((a, i) => normalizeAsset(a, a?.name || a?.location || `Destination`, i));
+        }
+
+        if (cancelled) return;
+        setDestinations(destItems);
+        if (destItems.length) setSelectedItem(destItems[0]);
+        setActiveTab('destinations');
+        setSelectedViewIndex(Number.isFinite(requestedViewIndex) ? requestedViewIndex : 0);
+        setLoadingAssets(false);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('loadTripAssets error', err);
+        setFetchError(err?.friendlyMessage || err?.message || 'Failed to load VR assets');
+        setLoadingAssets(false);
+      }
+    };
+
+    const loadGlobalAssets = async () => {
+      try {
+        const listResp = await destinationAPI.list();
+        const dests = listResp?.data?.data ?? [];
+
+        // For each destination fetch its vr assets
+        const calls = dests.map(d => destinationAPI.getVrAssets(d.name));
+        const results = await Promise.all(calls);
+
+        const destItems = [];
+        results.forEach((r, idx) => {
+          const assets = r?.data?.data ?? [];
+          if (Array.isArray(assets)) {
+            assets.forEach((a, i) => destItems.push(normalizeAsset(a, dests[idx].name, i)));
+          }
+        });
+
+        if (cancelled) return;
+        setDestinations(destItems);
+        if (destItems.length) setSelectedItem(destItems[0]);
+        setLoadingAssets(false);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('loadGlobalAssets error', err);
+        setFetchError(err?.friendlyMessage || err?.message || 'Failed to load VR assets');
+        setLoadingAssets(false);
+      }
+    };
+
+    if (tripId) loadTripAssets();
+    else loadGlobalAssets();
+
+    return () => { cancelled = true; };
+  }, [tripId]);
 
   const handleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -223,7 +258,11 @@ export default function VRPreview() {
     else setActiveTab('destinations');
   };
 
-  const items = activeTab === 'destinations' ? VR_DESTINATIONS : HOTEL_ROOMS;
+  const items = destinations;
+
+  const currentView = selectedItem?.views?.[selectedViewIndex];
+  const isKuulaView = currentView?.type === 'kuula' || selectedItem?.type === 'kuula';
+  const needsAframe = !!selectedItem && !isKuulaView;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -244,7 +283,7 @@ export default function VRPreview() {
             {/* Tab Switcher */}
             <div className="flex bg-slate-100 p-1 rounded-xl">
               <button
-                onClick={() => { setActiveTab('destinations'); setSelectedItem(VR_DESTINATIONS[0]); setSelectedViewIndex(0); }}
+                onClick={() => { setActiveTab('destinations'); setSelectedItem(destinations[0] || null); setSelectedViewIndex(0); }}
                 className={`px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all ${
                   activeTab === 'destinations' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-600'
                 }`}
@@ -252,15 +291,7 @@ export default function VRPreview() {
                 <Compass size={18} className="sm:hidden" />
                 <span className="hidden sm:flex items-center gap-2"><Compass size={16} /> Destinations</span>
               </button>
-              <button
-                onClick={() => { setActiveTab('hotels'); setSelectedItem(HOTEL_ROOMS[0]); setSelectedViewIndex(0); }}
-                className={`px-3 sm:px-5 py-2 rounded-lg text-sm font-medium transition-all ${
-                  activeTab === 'hotels' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-600'
-                }`}
-              >
-                <Building size={18} className="sm:hidden" />
-                <span className="hidden sm:flex items-center gap-2"><Building size={16} /> Hotels</span>
-              </button>
+              {/* Hotels are shown in the trip-scoped Hotel VR page; global VR shows only destinations */}
             </div>
           </div>
         </div>
@@ -276,17 +307,33 @@ export default function VRPreview() {
               className="relative bg-slate-900 rounded-2xl overflow-hidden"
               style={{ height: isFullscreen ? '100vh' : '480px' }}
             >
-              {!aframeLoaded ? (
+              {(loadingAssets || (needsAframe && !aframeLoaded)) ? (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-white">Loading VR Experience...</p>
                   </div>
                 </div>
+              ) : fetchError ? (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center text-white">
+                    <p className="font-medium">{fetchError}</p>
+                  </div>
+                </div>
               ) : (
                 <>
-                  {/* A-Frame Container */}
-                  <div ref={sceneRef} className="w-full h-full" />
+                  {/* Viewer area: either A-Frame scene for image panoramas or iframe for kuula embeds */}
+                  {selectedItem && ((selectedItem.type === 'kuula') || (selectedItem.views?.[selectedViewIndex]?.type === 'kuula')) ? (
+                    <iframe
+                      title={selectedItem.name}
+                      src={selectedItem.views?.[selectedViewIndex]?.embed_url || selectedItem.embed_url}
+                      className="w-full h-full border-0"
+                      allowFullScreen
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div ref={sceneRef} className="w-full h-full" />
+                  )}
 
                   {/* Overlay Controls */}
                   <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20 pointer-events-none">

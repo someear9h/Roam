@@ -109,6 +109,14 @@ exports.tripFeedbackSchema = z.object({
   would_recommend: z.boolean().optional(),
 });
 
+// Trip Review schema
+exports.tripReviewSchema = z.object({
+  trip_id: z.number({ message: 'trip_id must be a number' }),
+  rating: z.number().min(1).max(5).optional(),
+  title: z.string().max(100).optional(),
+  comment: z.string().max(1000).optional(),
+});
+
 // Trip Summary AI schema
 exports.tripSummarySchema = z.object({
   tripId: z.number({ message: 'tripId must be a number' }),

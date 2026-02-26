@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Globe, Mail, Lock, ArrowRight, User, Eye, EyeOff,
-  Plane, MapPin, Camera, Shield, Star
+  MapPin, Camera, Shield, Star
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { preferencesAPI } from '../services/api';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -18,78 +19,73 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [hasNavigated, setHasNavigated] = useState(false);
 
-  useEffect(() => {
-    if (isAuthenticated && !isSignUp && !hasNavigated) {
-      setHasNavigated(true);
-      navigate('/dashboard', { replace: true });
-    }
-  }, [isAuthenticated]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
 
-    try {
-      const result = await login(email, password);
-      if (result?.success) {
-        navigate('/dashboard', { replace: true });
-      }
-    } catch (err) {
-      const errorData = err.response?.data?.error;
-      if (typeof errorData === 'object') {
-        const firstError = Object.values(errorData).find(e => e?._errors?.length);
-        setError(firstError?._errors?.[0] || 'Login failed.');
+const handleLogin = async (e) => {
+  e.preventDefault();
+
+  if (isLoading) return;
+
+  setError("");
+  setIsLoading(true);
+
+  try {
+    const result = await login(email.trim(), password);
+
+    if (result.success) {
+
+      if (!result.onboardingComplete) {
+        navigate("/onboarding", { replace: true });
       } else {
-        setError(errorData || 'Invalid email or password.');
+        navigate("/dashboard", { replace: true });
       }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleSignUp = async (e) => {
-    e.preventDefault();
-    setError('');
-    
-    if (!name.trim()) {
-      setError('Please enter your name');
-      return;
-    }
-    if (!email.trim()) {
-      setError('Please enter your email');
-      return;
-    }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
-      return;
+    } else {
+      setError("Login failed");
     }
 
-    setIsLoading(true);
+  } catch (err) {
 
-    try {
-      const result = await register(name, email, password, '', 'en');
-      if (result?.success) {
-        setHasNavigated(true);
-        navigate('/onboarding', { replace: true });
-      }
-    } catch (err) {
-      const errorData = err.response?.data?.error;
-      if (typeof errorData === 'object') {
-        const firstError = Object.values(errorData).find(e => e?._errors?.length);
-        setError(firstError?._errors?.[0] || 'Registration failed.');
-      } else if (err.response?.status === 409) {
-        setError('An account with this email already exists.');
-      } else {
-        setError(errorData || 'Registration failed. Please try again.');
-      }
-    } finally {
-      setIsLoading(false);
+    if (err?.friendlyMessage) {
+      setError(err.friendlyMessage);
+    } else {
+      setError(err.message || "Login failed");
     }
-  };
+
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const handleSignUp = async (e) => {
+  e.preventDefault();
+  setError("");
+  setIsLoading(true);
+
+  try {
+    const result = await register(name, email, password, "", "en");
+
+    if (result.success) {
+      // Always send newly registered users through onboarding
+      navigate("/onboarding", { replace: true });
+    } else {
+      setError("Registration failed");
+    }
+
+  } catch (err) {
+    setError(
+      err?.friendlyMessage ||
+      err?.response?.data?.error ||
+      err.message ||
+      "Registration failed"
+    );
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const features = [
-    { icon: Plane, text: 'AI-Powered Itineraries' },
+    { icon: MapPin, text: 'AI-Powered Itineraries' },
     { icon: Camera, text: 'VR Destination Preview' },
     { icon: Shield, text: '24/7 Emergency Support' },
     { icon: MapPin, text: 'Local Expert Guides' },

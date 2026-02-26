@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { 
   Bot, Send, User, Sparkles, Map, Utensils, Languages, 
-  Plane, Hotel, Camera, Shield, Clock, ThumbsUp, ThumbsDown,
+  MapPin, Hotel, Camera, Shield, Clock, ThumbsUp, ThumbsDown,
   Mic, MicOff, Volume2, Loader2, ChevronRight, RotateCcw,
   MessageSquare, Image as ImageIcon, X
 } from 'lucide-react';
@@ -17,7 +17,7 @@ const QUICK_PROMPTS = [
   { icon: Map, label: 'Hidden gems', prompt: 'What are some hidden gems and off-the-beaten-path places to visit?' },
   { icon: Camera, label: 'Photo spots', prompt: 'Where are the best spots for photography and Instagram-worthy photos?' },
   { icon: Shield, label: 'Safety tips', prompt: 'What safety tips should I know about this area? Any scams to avoid?' },
-  { icon: Plane, label: 'Transport help', prompt: 'What\'s the best way to get around the city? Public transport tips?' },
+  { icon: MapPin, label: 'Transport help', prompt: 'What\'s the best way to get around the city? Public transport tips?' },
 ];
 
 export default function Assistant() {
@@ -127,7 +127,7 @@ export default function Assistant() {
     setIsLoading(true);
 
     try {
-      const response = await aiAPI.chat({ tripId: tripId || 1, message: messageText });
+      const response = await aiAPI.chat(tripId || 1, { message: messageText });
       
       if (response.data.success) {
         setMessages(prev => [...prev, {

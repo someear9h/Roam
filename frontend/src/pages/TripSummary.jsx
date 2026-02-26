@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   MapPin, Calendar, Star, Heart, Camera, MessageSquare,
-  ChevronRight, Share2, Download, Sparkles, Plane,
+  ChevronRight, Share2, Download, Sparkles,
   CheckCircle, ArrowLeft, ThumbsUp, Send, Map, Globe,
   Shield, Eye, Clock, Users
 } from 'lucide-react';
-import { summaryAPI, tripAPI } from '../services/api';
+import { summaryAPI, tripAPI, reviewAPI } from '../services/api';
 
 export default function TripSummary() {
   const { tripId } = useParams();
@@ -21,6 +21,13 @@ export default function TripSummary() {
     highlights: [],
     improvements: '',
     would_recommend: true,
+  });
+  const [reviews, setReviews] = useState([]);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewData, setReviewData] = useState({
+    rating: 5,
+    title: '',
+    comment: '',
   });
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
 
@@ -45,6 +52,14 @@ export default function TripSummary() {
         if (summaryRes.data.success) {
           setMemories(summaryRes.data.data.memories || []);
           setFeedback(summaryRes.data.data.feedback);
+        }
+      } catch (e) {}
+
+      // Load reviews
+      try {
+        const reviewsRes = await reviewAPI.getTripReviews(id);
+        if (reviewsRes.data.success) {
+          setReviews(reviewsRes.data.data);
         }
       } catch (e) {}
     } catch (error) {
@@ -85,8 +100,7 @@ export default function TripSummary() {
 
   const submitFeedback = async () => {
     try {
-      const response = await summaryAPI.submitFeedback({
-        trip_id: Number(tripId),
+      const response = await summaryAPI.submitFeedback(Number(tripId), {
         ...feedbackData
       });
       if (response.data.success) {
@@ -95,6 +109,21 @@ export default function TripSummary() {
       }
     } catch (error) {
       console.error('Failed to submit feedback:', error);
+    }
+  };
+
+  const submitReview = async () => {
+    try {
+      const response = await reviewAPI.createReview(Number(tripId), {
+        ...reviewData
+      });
+      if (response.data.success) {
+        setReviews(prev => [response.data.data, ...prev]);
+        setReviewData({ rating: 5, title: '', comment: '' });
+        setShowReviewForm(false);
+      }
+    } catch (error) {
+      console.error('Failed to submit review:', error);
     }
   };
 
@@ -180,7 +209,7 @@ export default function TripSummary() {
                   {formatDate(trip.start_date)} - {formatDate(trip.end_date)}
                 </span>
                 <span className="flex items-center gap-2">
-                  <Plane size={16} />
+                  <MapPin size={16} />
                   {tripDuration} days
                 </span>
               </div>
@@ -225,7 +254,7 @@ export default function TripSummary() {
       <div className="grid md:grid-cols-2 gap-6">
         {/* VR Preview */}
         <Link 
-          to={`/vr-preview?destination=${trip.destination}`}
+          to={`/trip/${tripId}/vr-preview`}
           className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white flex items-center gap-4 hover:from-purple-600 hover:to-purple-700 transition-all group"
         >
           <div className="p-4 bg-white/20 rounded-2xl">
@@ -431,6 +460,115 @@ export default function TripSummary() {
               >
                 <ThumbsUp className="w-5 h-5" /> Share your experience
               </button>
+            )}
+          </div>
+
+          {/* Reviews Section */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-blue-500" /> Trip Reviews
+              </h3>
+              <button
+                onClick={() => setShowReviewForm(!showReviewForm)}
+                className="text-blue-500 hover:text-blue-600 text-sm font-medium"
+              >
+                {showReviewForm ? 'Cancel' : 'Write Review'}
+              </button>
+            </div>
+
+            {showReviewForm && (
+              <div className="space-y-4 mb-6 p-4 bg-blue-50 rounded-xl">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setReviewData(p => ({ ...p, rating: star }))}
+                        className="p-1"
+                      >
+                        <Star className={`w-6 h-6 ${star <= reviewData.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Title (optional)</label>
+                  <input
+                    type="text"
+                    value={reviewData.title}
+                    onChange={(e) => setReviewData(p => ({ ...p, title: e.target.value }))}
+                    placeholder="Give your review a title..."
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Review</label>
+                  <textarea
+                    value={reviewData.comment}
+                    onChange={(e) => setReviewData(p => ({ ...p, comment: e.target.value }))}
+                    placeholder="Share your thoughts about this trip..."
+                    className="w-full p-3 border border-gray-200 rounded-xl resize-none h-24 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={submitReview}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2"
+                  >
+                    <Send className="w-4 h-4" /> Submit Review
+                  </button>
+                  <button
+                    onClick={() => setShowReviewForm(false)}
+                    className="text-gray-600 hover:text-gray-800 px-4 py-2"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {reviews.length > 0 ? (
+              <div className="space-y-4">
+                {reviews.map((review) => (
+                  <div key={review.id} className="border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-medium text-blue-600">
+                            {review.user.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{review.user.name}</p>
+                          <p className="text-sm text-gray-500">
+                            {new Date(review.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      {review.rating && (
+                        <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className={`w-4 h-4 ${i < review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {review.title && (
+                      <h4 className="font-medium text-gray-800 mb-1">{review.title}</h4>
+                    )}
+                    {review.comment && (
+                      <p className="text-gray-600 text-sm">{review.comment}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p>No reviews yet. Be the first to share your experience!</p>
+              </div>
             )}
           </div>
 

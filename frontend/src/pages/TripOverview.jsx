@@ -1,11 +1,15 @@
 import React from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { 
-  Calendar, Users, Edit3, Map, Check, Plane, MapPin, 
+  Calendar, Users, Edit3, Map, Check, MapPin, 
   Bell, Car, ArrowRight, CloudSun, Wind, Droplets, 
   Navigation, Phone, Info, Star, LifeBuoy
 } from 'lucide-react';
 
 export default function TripOverview() {
+  const navigate = useNavigate();
+  const { tripId } = useParams();
+
   return (
     <div className="space-y-8 pb-24">
       
@@ -30,10 +34,19 @@ export default function TripOverview() {
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2">Paris Getaway</h1>
               <p className="text-gray-300 font-medium">Trip ID: #TBO-88392-PAR</p>
             </div>
-            <button className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white font-semibold py-2.5 px-6 rounded-xl transition-all flex items-center gap-2">
-              <Edit3 size={16} />
-              Manage Trip
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white font-semibold py-2.5 px-6 rounded-xl transition-all flex items-center gap-2">
+                <Edit3 size={16} />
+                Manage Trip
+              </button>
+              <button
+                onClick={() => tripId && navigate(`/trip/${tripId}/vr-preview`)}
+                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold py-2.5 px-6 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-orange-500/30"
+              >
+                <Eye size={16} />
+                VR Preview
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -74,7 +87,7 @@ export default function TripOverview() {
                 <div className="flex flex-col items-center gap-3">
                   <div className="relative w-12 h-12 rounded-full bg-coral-500 text-white flex items-center justify-center shadow-lg ring-4 ring-white">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-coral-500 opacity-20"></span>
-                    <Plane size={24} />
+                    <Map size={24} />
                   </div>
                   <div className="text-center">
                     <p className="text-base font-bold text-coral-500">Travel Day</p>
@@ -110,8 +123,8 @@ export default function TripOverview() {
                   <Bell size={20} />
                 </div>
                 <div className="flex-grow">
-                  <h4 className="font-bold text-slate-900">Web Check-in Closing Soon</h4>
-                  <p className="text-sm text-slate-600 mt-1">Flight AF123 closes in <span className="font-bold text-teal-600">2 hours</span>.</p>
+                  <h4 className="font-bold text-slate-900">Reminder</h4>
+                  <p className="text-sm text-slate-600 mt-1">Check your trip details — action may be required.</p>
                 </div>
                 <button className="bg-teal-600 hover:bg-teal-700 text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
                   Check In
@@ -138,10 +151,10 @@ export default function TripOverview() {
                 <div className="w-full sm:w-px h-px sm:h-12 bg-slate-200"></div>
                 <div className="flex-grow">
                   <div className="flex items-center gap-2 mb-1">
-                    <Plane className="text-teal-600" size={20} />
-                    <h4 className="text-lg font-bold text-slate-900">Flight Departure</h4>
+                    <MapPin className="text-teal-600" size={20} />
+                    <h4 className="text-lg font-bold text-slate-900">Travel Day</h4>
                   </div>
-                  <p className="text-sm text-slate-500">Air France AF123 • JFK to CDG • Seat 4A</p>
+                  <p className="text-sm text-slate-500">Prepare for today's itinerary and hotel check-in.</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <button className="bg-teal-600 text-white font-bold px-4 py-2 rounded-xl text-sm shadow-lg shadow-teal-600/30">
@@ -187,37 +200,19 @@ export default function TripOverview() {
              </div>
           </div>
 
-          {/* Flight Status */}
+          {/* Quick Hotel & VR */}
           <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden p-6">
-             <div className="flex justify-between items-center mb-6">
-                <h4 className="font-bold text-slate-900 flex items-center gap-2">
-                  <Plane className="text-teal-600" size={20} /> Flight Status
-                </h4>
-                <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded">On Time</span>
-             </div>
-             <div className="flex justify-between items-center mb-6 px-2">
-                <div className="text-center">
-                  <div className="text-2xl font-black text-slate-900">JFK</div>
-                  <div className="text-xs text-slate-400 font-bold">New York</div>
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-16 bg-[url('https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=400')] bg-cover bg-center rounded-xl" />
+              <div className="flex-1">
+                <h4 className="font-bold text-slate-900">Hotel & VR Preview</h4>
+                <p className="text-sm text-slate-500 mt-1">View hotel details and immersive VR previews for your destination.</p>
+              <div className="mt-4 flex gap-2">
+                  <button className="px-4 py-2 bg-orange-500 text-white rounded-lg">View Hotel</button>
+                  <Link to={`/trip/${tripId}/vr-preview`} className="px-4 py-2 border border-slate-200 rounded-lg">Open VR</Link>
                 </div>
-                <div className="flex flex-col items-center px-2 w-full">
-                  <div className="text-xs text-slate-400 mb-1">7h 20m</div>
-                  <div className="w-full h-[2px] bg-slate-100 relative">
-                     <div className="absolute top-0 left-0 h-full w-1/2 bg-teal-600"></div>
-                     <Plane size={16} className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 text-teal-600 rotate-90 bg-white p-0.5" />
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-black text-slate-900">CDG</div>
-                  <div className="text-xs text-slate-400 font-bold">Paris</div>
-                </div>
-             </div>
-             <div className="grid grid-cols-2 gap-4 bg-slate-50 rounded-xl p-4">
-                <FlightDetail label="Departure" value="10:30 AM" />
-                <FlightDetail label="Gate" value="B24" align="right" highlight />
-                <FlightDetail label="Terminal" value="4" />
-                <FlightDetail label="Seat" value="4A" align="right" />
-             </div>
+              </div>
+            </div>
           </div>
 
           {/* Hotel Card */}
@@ -290,14 +285,7 @@ function WeatherDetail({ label, value }) {
   );
 }
 
-function FlightDetail({ label, value, align = 'left', highlight = false }) {
-  return (
-    <div className={`text-${align}`}>
-      <p className="text-xs text-slate-400 mb-0.5">{label}</p>
-      <p className={`font-bold ${highlight ? 'text-teal-600' : 'text-slate-900'}`}>{value}</p>
-    </div>
-  );
-}
+// FlightDetail removed — flight UI deprecated
 
 function ActionButton({ icon: Icon, label }) {
   return (

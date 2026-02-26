@@ -35,12 +35,20 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   const result = loginSchema.safeParse(req.body);
   if (!result.success) {
-    return res.status(400).json({ success: false, error: result.error.format() });
+    return res.status(400).json({ 
+  success: false, 
+  error: result.error.issues[0].message
+});
   }
   const { email, password } = result.data;
 
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !(await bcrypt.compare(password, user.password))) {
+  if (!user) {
+    return res.status(404).json({ success: false, error: 'User not found' });
+  }
+
+  const passwordMatch = await bcrypt.compare(password, user.password);
+  if (!passwordMatch) {
     return res.status(401).json({ success: false, error: 'Invalid credentials' });
   }
 

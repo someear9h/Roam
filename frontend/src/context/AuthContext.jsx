@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { authAPI, preferencesAPI } from '../services/api';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
+  const [selectedTrip, setSelectedTrip] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -13,66 +14,100 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
+    const savedSelectedTrip = localStorage.getItem('selectedTrip');
 
     if (savedToken && savedUser) {
       setToken(savedToken);
       setUser(JSON.parse(savedUser));
       setIsAuthenticated(true);
     }
+    if (savedSelectedTrip) {
+      try {
+        setSelectedTrip(JSON.parse(savedSelectedTrip));
+      } catch (e) {}
+    }
     setIsLoading(false);
   }, []);
 
-  const login = async (email, password) => {
-    setIsLoading(true);
-    try {
-      const response = await authAPI.login({ email, password });
-      if (response.data.success) {
-        const authToken = response.data.data.token;
-        const userData = { ...response.data.data };
-        setToken(authToken);
-        setUser(userData);
-        setIsAuthenticated(true);
-        localStorage.setItem('token', authToken);
-        localStorage.setItem('user', JSON.stringify(userData));
-        return { success: true, data: userData };
-      }
-    } catch (error) {
-      setIsLoading(false);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+const login = async (email, password) => {
+  const response = await authAPI.login({ email, password });
 
-  const register = async (name, email, password, phone = '', language = 'en') => {
-    setIsLoading(true);
-    try {
-      const response = await authAPI.register({ name, email, password, phone, language });
-      if (response.data.success) {
-        // Backend returns token at response.data.token (not in data.data)
-        const authToken = response.data.token;
-        const userData = { ...response.data.data, token: authToken };
-        setToken(authToken);
-        setUser(userData);
-        setIsAuthenticated(true);
-        localStorage.setItem('token', authToken);
-        localStorage.setItem('user', JSON.stringify(userData));
-        return { success: true, data: userData };
-      }
-    } catch (error) {
-      setIsLoading(false);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+  const authToken = response.data.data.token;
+
+  setToken(authToken);
+  setIsAuthenticated(true);
+
+  localStorage.setItem("token", authToken);
+
+  const profile = await getProfile();
+
+  // ✅ correct API
+  let onboardingComplete = false;
+
+  try {
+    const statusRes = await preferencesAPI.checkOnboardingStatus();
+
+    onboardingComplete =
+      statusRes?.data?.data?.onboarding_complete ??
+      statusRes?.data?.data?.completed ??
+      false;
+
+  } catch {
+    onboardingComplete = false;
+  }
+
+  return {
+    success: true,
+    onboardingComplete
   };
+};
+
+const register = async (name, email, password, phone = '', language = 'en') => {
+  setIsLoading(true);
+
+  try {
+    const response = await authAPI.register({
+      name,
+      email,
+      password,
+      phone,
+      language
+    });
+
+    const authToken = response.data.token;
+    const userData = response.data.data;
+
+    setToken(authToken);
+    setUser(userData);
+    setIsAuthenticated(true);
+
+    localStorage.setItem("token", authToken);
+    localStorage.setItem("user", JSON.stringify(userData));
+
+    // New users should always go through onboarding to save preferences,
+    // regardless of what the backend onboarding-status returns.
+    try {
+      localStorage.setItem('justRegistered', '1');
+    } catch (e) {}
+
+    return {
+      success: true,
+      onboardingComplete: false
+    };
+
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const logout = () => {
     setUser(null);
     setToken(null);
     setIsAuthenticated(false);
+    setSelectedTrip(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('selectedTrip');
   };
 
   const getProfile = async () => {
@@ -91,12 +126,18 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     token,
+    selectedTrip,
+    setSelectedTrip: (trip) => {
+      setSelectedTrip(trip);
+      try { localStorage.setItem('selectedTrip', JSON.stringify(trip)); } catch (e) {}
+    },
     isLoading,
     isAuthenticated,
     login,
     register,
     logout,
     getProfile,
+    refreshOnboardingStatus
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -108,4 +149,33 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+
+const refreshOnboardingStatus = async () => {
+  try {
+    const statusRes = await preferencesAPI.checkOnboardingStatus();
+
+    const onboardingComplete =
+      statusRes?.data?.data?.onboarding_complete ??
+      statusRes?.data?.data?.completed ??
+      false;
+
+    setUser(prev => ({
+      ...prev,
+      onboarding_complete: onboardingComplete
+    }));
+
+    const updatedUser = {
+      ...JSON.parse(localStorage.getItem("user") || "{}"),
+      onboarding_complete: onboardingComplete
+    };
+
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+
+    return onboardingComplete;
+
+  } catch {
+    return false;
+  }
 };

@@ -65,8 +65,7 @@ export default function Emergency() {
     
     setIsLoadingHelp(true);
     try {
-      const response = await emergencyAPI.getEmergencyInfo({
-        tripId: tripId || 1,
+      const response = await emergencyAPI.getEmergencyInfo(tripId || 1, {
         issue: issueText
       });
 
