@@ -15,7 +15,7 @@ import PreferencesModal from './components/PreferencesModal';
 // --- PAGE IMPORTS ---
 import Landing from './pages/Landing';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './pages/dashboard';
 import Itinerary from './pages/Itinerary';
 import Assistant from './pages/Assistant';
 import Emergency from './pages/Emergency';
