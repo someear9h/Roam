@@ -9,24 +9,47 @@ export const AuthProvider = ({ children }) => {
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [onboardingDone, setOnboardingDone] = useState(null); // null = not checked yet
 
-  // Initialize auth state from localStorage
+  // Initialize auth state from localStorage and validate token
   useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    const savedSelectedTrip = localStorage.getItem('selectedTrip');
+    const init = async () => {
+      const savedToken = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
+      const savedSelectedTrip = localStorage.getItem('selectedTrip');
 
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
-      setIsAuthenticated(true);
-    }
-    if (savedSelectedTrip) {
-      try {
-        setSelectedTrip(JSON.parse(savedSelectedTrip));
-      } catch (e) {}
-    }
-    setIsLoading(false);
+      if (savedToken && savedUser) {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+        setIsAuthenticated(true);
+
+        // Validate the token is still valid by fetching profile
+        try {
+          const res = await authAPI.getProfile();
+          if (res.data.success) {
+            setUser(res.data.data);
+            localStorage.setItem('user', JSON.stringify(res.data.data));
+          }
+        } catch (err) {
+          // Token is expired/invalid — clear everything
+          if (err?.response?.status === 401) {
+            setUser(null);
+            setToken(null);
+            setIsAuthenticated(false);
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('selectedTrip');
+          }
+        }
+      }
+      if (savedSelectedTrip) {
+        try {
+          setSelectedTrip(JSON.parse(savedSelectedTrip));
+        } catch (e) {}
+      }
+      setIsLoading(false);
+    };
+    init();
   }, []);
 
 const login = async (email, password) => {
@@ -123,6 +146,36 @@ const register = async (name, email, password, phone = '', language = 'en') => {
     }
   };
 
+  const refreshOnboardingStatus = async () => {
+    try {
+      const statusRes = await preferencesAPI.checkOnboardingStatus();
+
+      const complete =
+        statusRes?.data?.data?.onboarding_complete ??
+        statusRes?.data?.data?.completed ??
+        false;
+
+      setOnboardingDone(complete);
+
+      setUser(prev => ({
+        ...prev,
+        onboarding_complete: complete
+      }));
+
+      const updatedUser = {
+        ...JSON.parse(localStorage.getItem("user") || "{}"),
+        onboarding_complete: complete
+      };
+
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      return complete;
+
+    } catch {
+      return false;
+    }
+  };
+
   const value = {
     user,
     token,
@@ -133,6 +186,8 @@ const register = async (name, email, password, phone = '', language = 'en') => {
     },
     isLoading,
     isAuthenticated,
+    onboardingDone,
+    setOnboardingDone,
     login,
     register,
     logout,
@@ -149,33 +204,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
-
-
-const refreshOnboardingStatus = async () => {
-  try {
-    const statusRes = await preferencesAPI.checkOnboardingStatus();
-
-    const onboardingComplete =
-      statusRes?.data?.data?.onboarding_complete ??
-      statusRes?.data?.data?.completed ??
-      false;
-
-    setUser(prev => ({
-      ...prev,
-      onboarding_complete: onboardingComplete
-    }));
-
-    const updatedUser = {
-      ...JSON.parse(localStorage.getItem("user") || "{}"),
-      onboarding_complete: onboardingComplete
-    };
-
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-
-    return onboardingComplete;
-
-  } catch {
-    return false;
-  }
 };

@@ -4,15 +4,15 @@ const reviewController = require('../controllers/review.controller');
 const authMiddleware = require('../middlewares/auth.middleware');
 
 // Get all reviews for a trip
-router.get('/:tripId/reviews', authMiddleware, reviewController.getTripReviews);
+router.get('/:tripId', authMiddleware, reviewController.getTripReviews);
 
 // Create a new review for a trip
-router.post('/reviews', authMiddleware, reviewController.createTripReview);
+router.post('/', authMiddleware, reviewController.createTripReview);
 
 // Update a review
-router.put('/reviews/:reviewId', authMiddleware, reviewController.updateTripReview);
+router.put('/:reviewId', authMiddleware, reviewController.updateTripReview);
 
 // Delete a review
-router.delete('/reviews/:reviewId', authMiddleware, reviewController.deleteTripReview);
+router.delete('/:reviewId', authMiddleware, reviewController.deleteTripReview);
 
 module.exports = router;

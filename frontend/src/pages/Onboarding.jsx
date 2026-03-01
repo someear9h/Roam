@@ -21,7 +21,7 @@ const STEPS = [
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { getProfile, refreshOnboardingStatus } = useAuth();
+  const { getProfile, refreshOnboardingStatus, setOnboardingDone } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [preferences, setPreferences] = useState({
@@ -86,14 +86,15 @@ const handleComplete = async () => {
     await preferencesAPI.completeOnboarding(backendPrefs);
 
     localStorage.removeItem("userPreferences");
+    localStorage.removeItem("justRegistered");
 
     // ✅ refresh profile in context
     await getProfile();
 
-    // ✅ refresh onboarding flag in context
-    await refreshOnboardingStatus();
+    // ✅ Mark onboarding as done in context so Layout allows /dashboard
+    setOnboardingDone(true);
 
-    // ✅ now navigate
+    // Navigate to dashboard
     navigate("/dashboard", { replace: true });
 
   } catch (err) {
@@ -152,9 +153,7 @@ const handleComplete = async () => {
 
             {currentStep === 0 && (
               <div className="text-center space-y-8">
-                <div className="w-24 h-24 bg-gradient-to-br from-orange-500 to-amber-500 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-orange-200">
-                  <MapPin className="w-12 h-12 text-white" />
-                </div>
+                <img src="/logo.png" alt="Roam" className="w-28 h-28 object-contain mx-auto drop-shadow-lg" />
                 <div>
                   <h1 className="text-4xl font-bold text-slate-800 mb-3">Welcome to Roam</h1>
                   <p className="text-lg text-slate-500 max-w-md mx-auto">Let's create your personalized travel profile. This helps us recommend the perfect experiences for you.</p>

@@ -97,7 +97,7 @@ model TripMemory {
 
 model TripFeedback {
   id              Int      @id @default(autoincrement())
-  trip_id         Int
+  trip_id         Int      @unique
   rating          Int      // 1-5
   highlights      Json     @default("[]")
   improvements    String?  @db.Text
@@ -129,7 +129,7 @@ model HotelBooking {
   bookingRef   String?
   raw_response Json?
 
-  vr_assets    Json?    // 👈 ADD THIS
+  vr_assets    Json?    
 
   trip         Trip     @relation(fields: [trip_id], references: [id])
 }

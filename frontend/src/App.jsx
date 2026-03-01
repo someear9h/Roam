@@ -77,7 +77,7 @@ const Navbar = () => {
           </div>
         ) : (
           <Link to="/dashboard" className="flex items-center gap-2">
-            <img src="/logo2.png" alt="Roam" className="h-12 w-auto" />
+            <img src="/logo.png" alt="Roam" className="h-12 w-auto" />
           </Link>
         )}
 
@@ -206,44 +206,45 @@ const MobileNavLink = ({ to, icon: Icon, label, active }) => (
 // --- MAIN LAYOUT ---
 function Layout() {
   const location = useLocation();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, onboardingDone, setOnboardingDone } = useAuth();
   
   const isLandingPage = location.pathname === '/';
   const isLoginPage = location.pathname === '/login';
   const isOnboardingPage = location.pathname === '/onboarding';
-  const isPublicPage = isLandingPage || isLoginPage || isOnboardingPage;
+  const isPublicPage = isLandingPage || isLoginPage;
 
-  const [onboardingChecked, setOnboardingChecked] = useState(false);
-  const [onboardingComplete, setOnboardingComplete] = useState(true);
-
+  // Check onboarding status once when user is authenticated
   useEffect(() => {
     let cancelled = false;
     const check = async () => {
       if (!isAuthenticated) {
-        setOnboardingChecked(true);
+        setOnboardingDone(null);
         return;
       }
+      // Already checked — don't re-fetch
+      if (onboardingDone !== null) return;
       try {
         const res = await preferencesAPI.checkOnboardingStatus();
-        // backend may return either `completed` or `onboarding_complete`
         const completed = res.data?.data?.completed ?? res.data?.data?.onboarding_complete;
         if (!cancelled) {
-          setOnboardingComplete(!!completed);
-          setOnboardingChecked(true);
+          setOnboardingDone(!!completed);
         }
       } catch (e) {
         if (!cancelled) {
-          // Conservative: if we can't verify onboarding, require it.
-          setOnboardingComplete(false);
-          setOnboardingChecked(true);
+          if (e?.response?.status === 401) {
+            setOnboardingDone(null);
+          } else {
+            setOnboardingDone(false);
+          }
         }
       }
     };
     check();
     return () => { cancelled = true; };
-    // Re-check onboarding status on navigation so finishing onboarding
-    // immediately unlocks the rest of the app without a full refresh.
-  }, [isAuthenticated, location.pathname]);
+  }, [isAuthenticated]);
+
+  const onboardingChecked = onboardingDone !== null;
+  const onboardingComplete = !!onboardingDone;
 
   // Show loading state
   if (isLoading) {

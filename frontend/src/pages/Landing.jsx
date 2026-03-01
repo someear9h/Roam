@@ -97,7 +97,7 @@ export default function Landing() {
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2">
-              <img src="/logo2.png" alt="Roam" className="h-12 w-auto" />
+              <img src="/logo.png" alt="Roam" className="h-12 w-auto" />
               <span className="hidden sm:block text-xs text-slate-400 border-l border-slate-200 pl-2 ml-1">
                 TRAVEL COMPANION
               </span>

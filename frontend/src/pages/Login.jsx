@@ -146,7 +146,7 @@ const handleSignUp = async (e) => {
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           <div className="flex items-center gap-3 mb-8">
-            <img src="/logo2.png" alt="Roam" className="h-20 w-auto" />
+            <img src="/logo.png" alt="Roam" className="h-20 w-auto" />
           </div>
           
           <h1 className="text-5xl font-bold leading-tight mb-6">
@@ -175,7 +175,7 @@ const handleSignUp = async (e) => {
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
-            <img src="/logo2.png" alt="Roam" className="h-16 w-auto" />
+            <img src="/logo.png" alt="Roam" className="h-16 w-auto" />
           </div>
 
           {/* Toggle Tabs */}

@@ -66,6 +66,7 @@ const TRAVEL_SERVICES = [
   { icon: Map, label: 'Transport', description: 'Getting around', link: '/local-guide', slug: 'local-guide' },
   { icon: Camera, label: 'VR Preview', description: 'Virtual tours', link: '/explore-vr', slug: 'vr-preview' },
   { icon: Shield, label: 'Emergency', description: '24/7 support', link: '/emergency', slug: 'emergency' },
+  { icon: Star, label: 'Reviews', description: 'Trip reviews', link: '/dashboard', slug: 'reviews' },
 ];
 
 export default function Dashboard() {
@@ -259,7 +260,7 @@ export default function Dashboard() {
         {/* LEFT: TRIPS */}
         <div className="lg:col-span-2 space-y-6 min-w-0 relative z-10">
           
-         {trips.length > 0 && (
+         {trips.length > 0 ? (
   <div className="space-y-4">
     <h3 className="text-xl font-bold text-slate-800">
       Your Trips
@@ -269,6 +270,8 @@ export default function Dashboard() {
       <TripCard key={trip.id} trip={trip} />
     ))}
   </div>
+) : (
+  <EmptyState onCreateTrip={() => setShowCreateModal(true)} />
 )}
 <div className="py-6 text-slate-500">
   Featured destinations coming soon.
@@ -359,20 +362,8 @@ export default function Dashboard() {
               setShowCreateModal(false);
               try { setAuthSelectedTrip(trip); } catch (e) {}
               loadData();
-              // If the created trip is already completed (past end_date),
-              // navigate to the trip overview; otherwise go to assistant.
               if (trip?.id) {
-                try {
-                  const now = new Date();
-                  const endDate = trip.end_date ? new Date(trip.end_date) : null;
-                  if (endDate && endDate < now) {
-                    navigate(`/trip/${trip.id}`);
-                  } else {
-                    navigate(`/trip/${trip.id}/assistant`);
-                  }
-                } catch (e) {
-                  navigate(`/trip/${trip.id}/assistant`);
-                }
+                navigate(`/trip/${trip.id}`);
               }
             }}
           />
