@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { 
   Search, MapPin, Calendar, ChevronRight, ArrowRight, 
   Info, CreditCard, FileText, Bus, Globe, Building,
@@ -66,9 +67,13 @@ const UPCOMING_EVENTS = [
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentDestIndex, setCurrentDestIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Redirect to login if not authenticated, otherwise go to the intended path
+  const authLink = (path) => isAuthenticated ? path : '/login';
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -86,7 +91,7 @@ export default function Landing() {
   };
 
   const handleVRPreview = (destinationId) => {
-    navigate('/dashboard'); // VR previews now available per-trip
+    navigate(isAuthenticated ? '/dashboard' : '/login');
   };
 
   return (
@@ -294,7 +299,7 @@ export default function Landing() {
             {TRAVEL_SERVICES.map((service) => (
               <Link 
                 key={service.id}
-                to={service.link}
+                to={authLink(service.link)}
                 className="flex flex-col items-center text-center group"
               >
                 <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-3 group-hover:bg-coral-50 group-hover:border-coral-200 transition-colors">
@@ -317,7 +322,7 @@ export default function Landing() {
                 <p className="text-slate-500 mt-1">Preview destinations before you travel</p>
               </div>
               <Link 
-                to="/vr-preview"
+                to={authLink('/vr-preview')}
                 className="hidden md:flex items-center gap-2 text-coral-500 hover:text-coral-600 font-semibold"
               >
                 View All <ChevronRight size={18} />
@@ -367,7 +372,7 @@ export default function Landing() {
 
             <div className="mt-6 text-center md:hidden">
               <Link 
-                to="/vr-preview"
+                to={authLink('/vr-preview')}
                 className="inline-flex items-center gap-2 text-coral-500 hover:text-coral-600 font-semibold"
               >
                 View All Destinations <ChevronRight size={18} />
@@ -424,7 +429,7 @@ export default function Landing() {
                 Get Started Free <ArrowRight size={18} />
               </Link>
               <Link 
-                to="/vr-preview"
+                to={authLink('/vr-preview')}
                 className="px-8 py-4 bg-white/20 text-white font-bold rounded-full hover:bg-white/30 transition-colors flex items-center gap-2 border border-white/30"
               >
                 <Eye size={18} /> Try VR Preview
@@ -450,7 +455,7 @@ export default function Landing() {
               <h4 className="font-semibold mb-4">Explore</h4>
               <ul className="space-y-2 text-sm text-slate-400">
                 <li><a href="#destinations" className="hover:text-white transition-colors">Destinations</a></li>
-                <li><Link to="/vr-preview" className="hover:text-white transition-colors">VR Previews</Link></li>
+                <li><Link to={authLink('/vr-preview')} className="hover:text-white transition-colors">VR Previews</Link></li>
                 <li><a href="#events" className="hover:text-white transition-colors">Events</a></li>
               </ul>
             </div>
