@@ -3,8 +3,8 @@
 **Your Intelligent Travel Partner for Seamless Adventures**
 
 
-[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Visit_Site-blue?style=for-the-badge)](https://hm-019-qore.vercel.app/)
-[![Demo Video](https://img.shields.io/badge/🎬_Demo_Video-Watch_Now-red?style=for-the-badge)](https://drive.google.com/file/d/14PgQTtHbKdebI_OueEbId1cLy8VYiw9p/view?usp=sharing)
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-Visit_Site-blue?style=for-the-badge)](https://roam-alpha-livid.vercel.app/)
+[![Demo Video](https://img.shields.io/badge/🎬_Demo_Video-Watch_Now-red?style=for-the-badge)](https://drive.google.com/file/d/1joK7nsz9xsHdPDSn_lVSNY8cDk_iaMvj/view?usp=sharing)
 [![React](https://img.shields.io/badge/React-19.2.0-61DAFB?style=flat-square&logo=react)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-Express-339933?style=flat-square&logo=nodedotjs)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Prisma-4169E1?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
@@ -12,7 +12,7 @@
 
 
 <p align="center">
-  <img src="frontend/public/logo2.png" alt="Roam Logo" width="200"/>
+  <img src="frontend/public/logo.png" alt="Roam Logo" width="200"/>
 </p>
 
 ---

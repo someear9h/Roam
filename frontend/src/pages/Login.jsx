@@ -207,6 +207,14 @@ const handleSignUp = async (e) => {
             </p>
           </div>
 
+          {!isSignUp && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+              <p className="font-semibold mb-1">Demo Credentials</p>
+              <p>Email: <span className="font-mono">test@gmail.com</span></p>
+              <p>Password: <span className="font-mono">test@123</span></p>
+            </div>
+          )}
+
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm flex items-center gap-2">
               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
